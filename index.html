@@ -297,18 +297,7 @@
 
   Progress.load();
 
-  // One-time import from MapGenie (remove this block after first load)
-  (function() {
-    if (Progress._data._mgImported) return;
-    var mgFound = ["loc-544020","loc-544720","loc-545303","loc-545457","loc-545602","loc-545604","loc-545605","loc-545607","loc-545739","loc-545769","loc-546383","loc-546391","loc-546404","loc-546420","loc-546427","loc-546541","loc-546858","loc-546985","loc-549615","loc-549833","loc-550147","loc-550148","loc-550223","loc-550232","loc-550246","loc-550582","loc-550594","loc-550637","loc-551449","loc-551476","loc-551480","loc-551481","loc-551484","loc-551485","loc-551488","loc-551490","loc-551491","loc-551495","loc-551496","loc-551497","loc-551500","loc-551643","loc-551644","loc-551656","loc-551690","loc-551722","loc-551918","loc-553898","loc-554211","loc-554426","loc-554474","loc-555141","loc-559900","loc-564619"];
-    var mapData = Progress._ensureMap('pywel');
-    mgFound.forEach(function(id) {
-      if (mapData.found.indexOf(id) === -1) mapData.found.push(id);
-    });
-    Progress._data._mgImported = true;
-    Progress.save();
-    console.log('MapGenie progress imported: ' + mgFound.length + ' locations');
-  })();
+  // To import MapGenie progress: use Tools > Import Progress with a JSON file
   </script>
 
   <!-- Main App -->
@@ -395,6 +384,14 @@
       var safe = escapeHtml(text);
       safe = safe.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
       safe = safe.replace(/\*(.+?)\*/g, '<i>$1</i>');
+      // Convert [text](mapgenie locationIds links) to clickable internal links
+      safe = safe.replace(/\[([^\]]+)\]\(https?:\/\/mapgenie\.io\/[^)]*locationIds=(\d+)[^)]*\)/g, function(m, label, locId) {
+        return '<a href="#" class="cdm-loc-link" data-loc-id="loc-' + locId + '" style="color:#5A8EB2;text-decoration:underline;cursor:pointer;">' + label + '</a>';
+      });
+      // Convert other markdown links
+      safe = safe.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#5A8EB2;">$1</a>');
+      // Bullet lists
+      safe = safe.replace(/^- (.+)$/gm, '<li style="margin-left:16px;list-style:disc;">$1</li>');
       safe = safe.replace(/\n/g, '<br>');
       return safe;
     }
@@ -468,6 +465,26 @@
         var desc = document.createElement('div');
         desc.style.cssText = 'font-size:12px;margin-bottom:6px;';
         desc.innerHTML = renderMarkdown(marker.description);
+        // Wire up internal location links
+        desc.querySelectorAll('.cdm-loc-link').forEach(function(link) {
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var targetId = link.getAttribute('data-loc-id');
+            var targetMarker = markerDataById[targetId];
+            var targetLm = leafletMarkers[targetId];
+            if (targetMarker && targetLm) {
+              if (categoryVisibility[targetMarker.categoryId] === false) {
+                categoryVisibility[targetMarker.categoryId] = true;
+                saveVisibility();
+                applyFilters();
+                renderSidebar();
+              }
+              map.setView(L.latLng(targetMarker.lat, targetMarker.lng), 16);
+              targetLm.unbindPopup();
+              targetLm.bindPopup(createPopupContent(targetMarker), { maxWidth: 280 }).openPopup();
+            }
+          });
+        });
         container.appendChild(desc);
       }
 
@@ -601,6 +618,9 @@
     }
     placeMarkers();
 
+    // Apply hide-found on startup
+    if (hideFound) applyFilters();
+
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
       var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
@@ -648,7 +668,9 @@
         groupCheckbox.type = 'checkbox';
         groupCheckbox.className = 'category-checkbox';
         var allVisible = group.categories.every(function(c) { return categoryVisibility[c.id] !== false; });
+        var anyVisible = group.categories.some(function(c) { return categoryVisibility[c.id] !== false; });
         groupCheckbox.checked = allVisible;
+        groupCheckbox.indeterminate = !allVisible && anyVisible;
         groupCheckbox.addEventListener('click', function(e) { e.stopPropagation(); });
         groupCheckbox.addEventListener('change', function() {
           var checked = groupCheckbox.checked;
@@ -666,6 +688,14 @@
 
         var catsDiv = document.createElement('div');
         catsDiv.className = 'group-categories';
+        // Restore collapsed state
+        var collapseKey = 'cdm-collapse';
+        var collapsedGroups = {};
+        try { var cg = localStorage.getItem(collapseKey); if (cg) collapsedGroups = JSON.parse(cg); } catch(e) {}
+        if (collapsedGroups[group.id]) {
+          catsDiv.classList.add('hidden');
+          arrow.classList.add('collapsed');
+        }
 
         group.categories.forEach(function(cat) {
           var row = document.createElement('div');
@@ -727,6 +757,12 @@
         header.addEventListener('click', function() {
           var isHidden = catsDiv.classList.toggle('hidden');
           arrow.classList.toggle('collapsed', isHidden);
+          // Persist collapse state
+          try {
+            var cg = JSON.parse(localStorage.getItem(collapseKey) || '{}');
+            if (isHidden) cg[group.id] = true; else delete cg[group.id];
+            localStorage.setItem(collapseKey, JSON.stringify(cg));
+          } catch(e) {}
         });
       });
     }
@@ -810,7 +846,8 @@
       searchTimer = setTimeout(function() {
 
       var matches = currentMarkerData.markers.filter(function(m) {
-        return m.title.toLowerCase().indexOf(q) !== -1;
+        return m.title.toLowerCase().indexOf(q) !== -1 ||
+          (m.description && m.description.toLowerCase().indexOf(q) !== -1);
       }).slice(0, 50);
 
       searchResultsDiv.innerHTML = '';
@@ -863,6 +900,9 @@
             lm.unbindPopup();
             lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
           }
+          // Close search results
+          searchResultsDiv.style.display = 'none';
+          searchResultsDiv.innerHTML = '';
         });
 
         searchResultsDiv.appendChild(row);
