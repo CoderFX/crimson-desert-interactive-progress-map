@@ -769,7 +769,7 @@
       }
 
       var matches = currentMarkerData.markers.filter(function(m) {
-        return m.title.toLowerCase().indexOf(q) !== -1 && categoryVisibility[m.categoryId] !== false;
+        return m.title.toLowerCase().indexOf(q) !== -1;
       }).slice(0, 50);
 
       searchResultsDiv.innerHTML = '';
@@ -809,6 +809,13 @@
         }
 
         row.addEventListener('click', function() {
+          // Ensure category is visible
+          if (categoryVisibility[marker.categoryId] === false) {
+            categoryVisibility[marker.categoryId] = true;
+            saveVisibility();
+            applyFilters();
+            renderSidebar();
+          }
           var lm = leafletMarkers[marker.id];
           if (lm) {
             map.setView(L.latLng(marker.lat, marker.lng), 16);
