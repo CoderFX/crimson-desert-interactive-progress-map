@@ -6,8 +6,19 @@
   <title>Crimson Desert Map</title>
   <link rel="stylesheet" href="lib/leaflet.css">
   <style>
+    @font-face {
+      font-family: 'cdm-icons';
+      src: url('lib/fonts/icomoon.woff') format('woff'), url('lib/fonts/icomoon.ttf') format('truetype');
+      font-weight: normal; font-style: normal; font-display: block;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; background: #1a1a2e; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .cdm-pin { position:relative; width:24px; height:32px; }
+    .cdm-pin-bg { width:24px; height:32px; }
+    .cdm-pin-bg svg { width:24px; height:32px; display:block; }
+    .cdm-pin-icon { position:absolute; top:3px; left:0; width:24px; height:20px; text-align:center; line-height:20px; font-family:'cdm-icons'!important; font-size:13px; color:#fff; }
+    .cdm-pin-found { opacity:0.4; }
+    .cdm-pin-found .cdm-pin-bg svg path { fill:#27ae60; }
     #map { position: absolute; top: 44px; left: 280px; right: 0; bottom: 0; background: #16213e; }
 
     /* Top bar */
@@ -322,10 +333,28 @@
       return '#888';
     }
 
-    // --- Marker style helpers (circleMarker like MapGenie) ---
+    // --- Icon map (icon name -> unicode codepoint) ---
+    var ICON_MAP = {"witchs_hideout":"e900","well":"e901","weapon":"e902","walker":"e903","wagon_fence":"e904","treasure_map_solution":"e905","treasure_map":"e906","treasure_chest":"e907","tool_blueprint":"e908","tool":"e909","timber_warehouse":"e90a","tannery":"e90b","tailors_shop":"e90c","stronghold":"e90d","street_shop":"e90e","stone":"e90f","stable":"e910","spire":"e911","spider_web":"e912","smithy":"e913","skyroot":"e914","silver_ore":"e915","shadow_sanctum":"e916","secret_space":"e917","secret_shop":"e918","sealed_abyss_artifact":"e919","scolecite_ore":"e91a","saddlery":"e91b","rubber":"e91c","royal_trading_post":"e91d","research_institute":"e921","red_seaweed":"e922","recipe":"e923","reading_material":"e924","ranchers_shop":"e925","puzzle_clue":"e926","provisioners_shop":"e927","produce":"e928","prey_animal":"e929","predator":"e92a","point_of_interest":"e92b","pine_mushroom":"e92c","pet_shop":"e92d","pet":"e92e","palmar_leaf":"e92f","pack":"e930","oakwood_mushroom":"e931","npc":"e932","notice_board":"e933","mysterious_creature":"e934","mount":"e935","money":"e936","miscellaneous":"e937","minigame":"e938","mineral_shop":"e939","mercury":"e93a","memory_fragment":"e93b","main_quest":"e93c","locked_treasure":"e93d","livestock_fence":"e93e","legendary_animal":"e93f","learn_skill":"e940","kuku_shop":"e941","kuku_pot_item":"e942","key_item":"e943","key":"e944","iron_ore":"e945","inn":"e946","infirmary":"e947","horse_black_market":"e948","honey":"e949","hidden_passage":"e94a","herb":"e94b","guard_station":"e94c","grocers_shop":"e94d","grindstone":"e94e","greymane_shrine":"e94f","green_algae":"e950","gold_ore":"e951","ginseng":"e952","garnet":"e953","furniture_shop":"e954","fishing_shop":"e955","faction_quest":"e956","equipment_shop":"e957","equipment_blueprint":"e958","epidote":"e959","elixir":"e95a","elite_enemy":"e95b","easter_egg":"e95c","dyehouse":"e95d","dye":"e95e","diamond":"e95f","decorative_stone_shop":"e960","coral_mushroom":"e961","copper_ore":"e962","contribution_shop":"e963","constellation":"e964","confessional":"e965","common_equipment":"e966","chest":"e967","cave":"e968","cauldron":"e969","butchery":"e96a","brimstone":"e96b","boss":"e96c","bonfire":"e96d","bloodstone":"e96e","black_market_trading":"e96f","bismuth_ore":"e970","bell":"e971","barracks":"e972","bank":"e973","back_alley_shop":"e974","azurite":"e975","artwork_shop":"e976","artillery_unit":"e977","armor":"e978","area":"e979","anvil":"e97a","alchemy_recipe":"e97b","accessory":"e97c","abyss_nexus":"e97d","abyss_gear":"e97e","abyss_enemy":"e97f","abyss_cresset":"e980","abyss_artifact":"e981"};
+
+    // --- Marker style helpers ---
     function getMarkerColor(categoryId) {
       var info = categoryMap[categoryId];
       return info ? sanitizeColor(info.group.color) : '#888';
+    }
+
+    function getIconChar(categoryId) {
+      var info = categoryMap[categoryId];
+      if (!info) return '?';
+      var iconName = info.category.icon;
+      var code = ICON_MAP[iconName];
+      return code ? String.fromCharCode(parseInt(code, 16)) : '?';
+    }
+
+    function createPinHtml(color, iconChar, isFound) {
+      var c = isFound ? '#27ae60' : color;
+      return '<div class="cdm-pin' + (isFound ? ' cdm-pin-found' : '') + '">' +
+        '<div class="cdm-pin-bg"><svg viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="' + c + '"/></svg></div>' +
+        '<div class="cdm-pin-icon">' + iconChar + '</div></div>';
     }
 
     // --- Simple markdown to safe HTML ---
@@ -464,28 +493,29 @@
 
     function updateMarkerAppearance(markerId, isFound) {
       var lm = leafletMarkers[markerId];
-      if (!lm || !lm.setStyle) return;
-      lm.setStyle({
-        fillOpacity: isFound ? 0.3 : 0.9,
-        opacity: isFound ? 0.3 : 1,
-        fillColor: isFound ? '#27ae60' : (lm._cdmOrigColor || getMarkerColor(lm._cdmCategoryId))
-      });
+      if (!lm || !lm.setIcon) return;
+      lm.setIcon(createMarkerIcon(lm._cdmCategoryId, isFound));
     }
 
     // --- Place pre-populated markers ---
+    function createMarkerIcon(categoryId, isFound) {
+      var color = getMarkerColor(categoryId);
+      var iconChar = getIconChar(categoryId);
+      return L.divIcon({
+        className: '',
+        html: createPinHtml(color, iconChar, isFound),
+        iconSize: [24, 32],
+        iconAnchor: [12, 32],
+        popupAnchor: [0, -32]
+      });
+    }
+
     function placeMarkers() {
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
-        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var lm = L.circleMarker(latlng, {
-          radius: 6,
-          fillColor: isFound ? '#27ae60' : color,
-          color: '#fff',
-          weight: 1.5,
-          fillOpacity: isFound ? 0.3 : 0.9,
-          opacity: isFound ? 0.3 : 1
-        }).addTo(map);
+        var icon = createMarkerIcon(marker.categoryId, isFound);
+        var lm = L.marker(latlng, { icon: icon }).addTo(map);
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
@@ -500,19 +530,15 @@
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
       var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
-      var color = getMarkerColor(marker.categoryId);
-      var lm = L.circleMarker(latlng, {
-        radius: 7,
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9,
-        opacity: 1,
-        dashArray: '3 3'
-      }).addTo(map);
+      var icon = createMarkerIcon(marker.categoryId, false);
+      var lm = L.marker(latlng, { icon: icon, draggable: true }).addTo(map);
       lm._cdmCategoryId = marker.categoryId;
       leafletMarkers[marker.id] = lm;
       lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250 });
+      lm.on('dragend', function() {
+        var pos = lm.getLatLng();
+        Progress.updateCustomMarker(currentMapId, marker.id, { lat: pos.lat, lng: pos.lng });
+      });
     }
 
     function placeCustomMarkers() {
@@ -585,7 +611,10 @@
           var iconSpan = document.createElement('span');
           iconSpan.className = 'category-icon';
           iconSpan.style.background = group.color;
-          iconSpan.textContent = cat.title.charAt(0).toUpperCase();
+          iconSpan.style.fontFamily = "'cdm-icons'";
+          iconSpan.style.fontSize = '11px';
+          var catCode = ICON_MAP[cat.icon];
+          iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : cat.title.charAt(0);
 
           var titleSpan = document.createElement('span');
           titleSpan.className = 'category-title';
@@ -629,13 +658,8 @@
           if (map.hasLayer(lm)) map.removeLayer(lm);
         } else {
           if (!map.hasLayer(lm)) map.addLayer(lm);
-          if (lm.setStyle) {
-            var color = getMarkerColor(marker.categoryId);
-            lm.setStyle({
-              fillOpacity: isFound ? 0.3 : 0.9,
-              opacity: isFound ? 0.3 : 1,
-              fillColor: isFound ? '#27ae60' : color
-            });
+          if (lm.setIcon) {
+            lm.setIcon(createMarkerIcon(marker.categoryId, isFound));
           }
         }
       }
@@ -733,16 +757,9 @@
 
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
-        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var lm = L.circleMarker(latlng, {
-          radius: 6,
-          fillColor: isFound ? '#27ae60' : color,
-          color: '#fff',
-          weight: 1.5,
-          fillOpacity: isFound ? 0.3 : 0.9,
-          opacity: isFound ? 0.3 : 1
-        }).addTo(map);
+        var icon = createMarkerIcon(marker.categoryId, isFound);
+        var lm = L.marker(latlng, { icon: icon }).addTo(map);
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
