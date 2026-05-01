@@ -133,6 +133,10 @@
     <div id="sidebar-header">
       <h2>Crimson Desert Map</h2>
       <input type="text" id="search-input" placeholder="Search markers...">
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button id="btn-hide-all" style="flex:1;padding:4px;background:#2a2a4a;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:11px;cursor:pointer;">Hide All</button>
+        <button id="btn-show-all" style="flex:1;padding:4px;background:#2a2a4a;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:11px;cursor:pointer;">Show All</button>
+      </div>
     </div>
     <div id="sidebar-categories"></div>
     <div id="sidebar-footer">
@@ -305,35 +309,14 @@
       return '#888';
     }
 
-    // --- Create marker icon ---
-    function createMarkerIcon(categoryId) {
+    // --- Marker style helpers (circleMarker like MapGenie) ---
+    function getMarkerColor(categoryId) {
       var info = categoryMap[categoryId];
-      if (!info) return L.divIcon({ className: 'cdm-marker', html: '<div style="background:#888;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;">?</div>', iconSize: [24, 24], iconAnchor: [12, 12] });
-      var color = sanitizeColor(info.group.color);
-      var abbr = escapeHtml(info.category.title.substring(0, 2).toUpperCase());
-      return L.divIcon({
-        className: 'cdm-marker',
-        html: '<div style="background:' + color + ';width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:8px;font-weight:bold;color:#fff;border:2px solid #fff;">' + abbr + '</div>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-      });
+      return info ? sanitizeColor(info.group.color) : '#888';
     }
 
-    function createCustomMarkerIcon(categoryId) {
-      var info = categoryMap[categoryId];
-      var color = sanitizeColor(info ? info.group.color : '#9b59b6');
-      var label = escapeHtml(info ? info.category.title.substring(0, 2).toUpperCase() : '\u2605');
-      return L.divIcon({
-        className: 'cdm-marker cdm-custom-marker',
-        html: '<div style="background:' + color + ';width:22px;height:22px;border-radius:4px;text-align:center;line-height:22px;font-size:10px;font-weight:bold;color:#fff;border:2px dashed #fff;transform:rotate(45deg);">' + label + '</div>',
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
-      });
-    }
-
-    // --- Init Map ---
+    // --- Init Map (standard CRS for web mercator tiles) ---
     var map = L.map('map', {
-      crs: L.CRS.Simple,
       minZoom: currentMapConfig.minZoom || 8,
       maxZoom: currentMapConfig.maxZoom || 19,
       zoomControl: true
@@ -446,47 +429,51 @@
 
     function updateMarkerAppearance(markerId, isFound) {
       var lm = leafletMarkers[markerId];
-      if (!lm) return;
-      var el = lm.getElement();
-      if (el) {
-        el.style.opacity = isFound ? '0.5' : '1';
-        var check = el.querySelector('.cdm-check');
-        if (isFound && !check) {
-          var checkEl = document.createElement('div');
-          checkEl.className = 'cdm-check';
-          checkEl.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#27ae60;color:#fff;width:14px;height:14px;border-radius:50%;font-size:10px;text-align:center;line-height:14px;';
-          checkEl.textContent = '\u2713';
-          el.appendChild(checkEl);
-        } else if (!isFound && check) {
-          check.remove();
-        }
-      }
+      if (!lm || !lm.setStyle) return;
+      lm.setStyle({
+        fillOpacity: isFound ? 0.3 : 0.9,
+        opacity: isFound ? 0.3 : 1,
+        fillColor: isFound ? '#27ae60' : (lm._cdmOrigColor || getMarkerColor(lm._cdmCategoryId))
+      });
     }
 
     // --- Place pre-populated markers ---
-    currentMarkerData.markers.forEach(function(marker) {
-      var latlng = L.latLng(marker.lat, marker.lng);
-      var icon = createMarkerIcon(marker.categoryId);
-      var lm = L.marker(latlng, { icon: icon }).addTo(map);
-      lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
-      leafletMarkers[marker.id] = lm;
-
-      if (Progress.isFound(currentMapId, marker.id)) {
-        setTimeout(function() { updateMarkerAppearance(marker.id, true); }, 0);
-      }
-    });
+    function placeMarkers() {
+      currentMarkerData.markers.forEach(function(marker) {
+        var latlng = L.latLng(marker.lat, marker.lng);
+        var color = getMarkerColor(marker.categoryId);
+        var isFound = Progress.isFound(currentMapId, marker.id);
+        var lm = L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: color,
+          color: '#fff',
+          weight: 1.5,
+          fillOpacity: isFound ? 0.4 : 0.9,
+          opacity: isFound ? 0.4 : 1
+        }).addTo(map);
+        lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
+        lm._cdmCategoryId = marker.categoryId;
+        leafletMarkers[marker.id] = lm;
+      });
+    }
+    placeMarkers();
 
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
       var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
-      var icon = createCustomMarkerIcon(marker.categoryId);
-      var lm = L.marker(latlng, { icon: icon, draggable: true }).addTo(map);
+      var color = getMarkerColor(marker.categoryId);
+      var lm = L.circleMarker(latlng, {
+        radius: 7,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9,
+        opacity: 1,
+        dashArray: '3 3'
+      }).addTo(map);
+      lm._cdmCategoryId = marker.categoryId;
       leafletMarkers[marker.id] = lm;
       lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250 });
-      lm.on('dragend', function() {
-        var pos = lm.getLatLng();
-        Progress.updateCustomMarker(currentMapId, marker.id, { lat: pos.lat, lng: pos.lng });
-      });
     }
 
     function placeCustomMarkers() {
@@ -568,42 +555,34 @@
     }
 
     // --- Apply visibility filters ---
-    function applyFilterToMarker(marker, searchText) {
-      var lm = leafletMarkers[marker.id];
-      if (!lm) return;
-      var el = lm.getElement();
-      if (!el) return;
-
-      var catVisible = categoryVisibility[marker.categoryId] !== false;
-      var matchesSearch = !searchText || marker.title.toLowerCase().indexOf(searchText) !== -1;
-      var isFound = marker.isCustom ? false : Progress.isFound(currentMapId, marker.id);
-
-      if (!catVisible) {
-        el.style.display = 'none';
-      } else {
-        el.style.display = '';
-        if (!matchesSearch) {
-          el.style.opacity = '0.2';
-        } else if (isFound) {
-          el.style.opacity = '0.5';
-        } else {
-          el.style.opacity = '1';
-        }
-      }
-    }
-
     function applyFilters() {
       var searchText = document.getElementById('search-input').value.toLowerCase();
 
-      currentMarkerData.markers.forEach(function(marker) {
-        applyFilterToMarker(marker, searchText);
-      });
+      function filterMarker(marker) {
+        var lm = leafletMarkers[marker.id];
+        if (!lm) return;
 
-      // Also filter custom markers
-      var customs = Progress.getCustomMarkers(currentMapId);
-      customs.forEach(function(marker) {
-        applyFilterToMarker(marker, searchText);
-      });
+        var catVisible = categoryVisibility[marker.categoryId] !== false;
+        var matchesSearch = !searchText || marker.title.toLowerCase().indexOf(searchText) !== -1;
+        var isFound = marker.isCustom ? false : Progress.isFound(currentMapId, marker.id);
+
+        if (!catVisible || !matchesSearch) {
+          if (map.hasLayer(lm)) map.removeLayer(lm);
+        } else {
+          if (!map.hasLayer(lm)) map.addLayer(lm);
+          if (lm.setStyle) {
+            var color = getMarkerColor(marker.categoryId);
+            lm.setStyle({
+              fillOpacity: isFound ? 0.3 : 0.9,
+              opacity: isFound ? 0.3 : 1,
+              fillColor: isFound ? '#27ae60' : color
+            });
+          }
+        }
+      }
+
+      currentMarkerData.markers.forEach(filterMarker);
+      Progress.getCustomMarkers(currentMapId).forEach(filterMarker);
     }
 
     // --- Update progress display ---
@@ -625,6 +604,19 @@
     // --- Search ---
     document.getElementById('search-input').addEventListener('input', function() {
       applyFilters();
+    });
+
+    // --- Hide All / Show All ---
+    document.getElementById('btn-hide-all').addEventListener('click', function() {
+      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
+      applyFilters();
+      renderSidebar();
+    });
+
+    document.getElementById('btn-show-all').addEventListener('click', function() {
+      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = true; });
+      applyFilters();
+      renderSidebar();
     });
 
     renderSidebar();
@@ -682,13 +674,19 @@
 
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
-        var icon = createMarkerIcon(marker.categoryId);
-        var lm = L.marker(latlng, { icon: icon }).addTo(map);
+        var color = getMarkerColor(marker.categoryId);
+        var isFound = Progress.isFound(currentMapId, marker.id);
+        var lm = L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: isFound ? '#27ae60' : color,
+          color: '#fff',
+          weight: 1.5,
+          fillOpacity: isFound ? 0.3 : 0.9,
+          opacity: isFound ? 0.3 : 1
+        }).addTo(map);
         lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
+        lm._cdmCategoryId = marker.categoryId;
         leafletMarkers[marker.id] = lm;
-        if (Progress.isFound(currentMapId, marker.id)) {
-          setTimeout(function() { updateMarkerAppearance(marker.id, true); }, 0);
-        }
       });
 
       placeCustomMarkers();
