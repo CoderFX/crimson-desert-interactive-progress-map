@@ -149,7 +149,7 @@
 
   <script src="lib/leaflet.js"></script>
   <script src="data/maps.js"></script>
-  <script src="data/markers/the-continent.js"></script>
+  <script src="data/markers/pywel.js"></script>
 
   <!-- Progress Storage -->
   <script>
@@ -310,19 +310,19 @@
       var info = categoryMap[categoryId];
       if (!info) return L.divIcon({ className: 'cdm-marker', html: '<div style="background:#888;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;">?</div>', iconSize: [24, 24], iconAnchor: [12, 12] });
       var color = sanitizeColor(info.group.color);
-      var icon = escapeHtml(info.category.icon);
+      var abbr = escapeHtml(info.category.title.substring(0, 2).toUpperCase());
       return L.divIcon({
         className: 'cdm-marker',
-        html: '<div style="background:' + color + ';width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;">' + icon + '</div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
+        html: '<div style="background:' + color + ';width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:8px;font-weight:bold;color:#fff;border:2px solid #fff;">' + abbr + '</div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
       });
     }
 
     function createCustomMarkerIcon(categoryId) {
       var info = categoryMap[categoryId];
       var color = sanitizeColor(info ? info.group.color : '#9b59b6');
-      var label = escapeHtml(info ? info.category.icon : '\u2605');
+      var label = escapeHtml(info ? info.category.title.substring(0, 2).toUpperCase() : '\u2605');
       return L.divIcon({
         className: 'cdm-marker cdm-custom-marker',
         html: '<div style="background:' + color + ';width:22px;height:22px;border-radius:4px;text-align:center;line-height:22px;font-size:10px;font-weight:bold;color:#fff;border:2px dashed #fff;transform:rotate(45deg);">' + label + '</div>',
@@ -334,14 +334,18 @@
     // --- Init Map ---
     var map = L.map('map', {
       crs: L.CRS.Simple,
-      minZoom: -2,
-      maxZoom: 4,
+      minZoom: currentMapConfig.minZoom || 8,
+      maxZoom: currentMapConfig.maxZoom || 19,
       zoomControl: true
     });
 
-    var bounds = currentMapConfig.bounds;
-    L.imageOverlay(currentMapConfig.image, bounds).addTo(map);
-    map.fitBounds(bounds);
+    L.tileLayer(currentMapConfig.tilePattern, {
+      minZoom: currentMapConfig.minZoom || 8,
+      maxZoom: currentMapConfig.maxZoom || 19,
+      noWrap: true
+    }).addTo(map);
+
+    map.setView(currentMapConfig.center, currentMapConfig.initialZoom || 11);
 
     // --- Track Leaflet markers ---
     var leafletMarkers = {};
@@ -461,7 +465,7 @@
 
     // --- Place pre-populated markers ---
     currentMarkerData.markers.forEach(function(marker) {
-      var latlng = L.latLng(marker.y, marker.x);
+      var latlng = L.latLng(marker.lat, marker.lng);
       var icon = createMarkerIcon(marker.categoryId);
       var lm = L.marker(latlng, { icon: icon }).addTo(map);
       lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
@@ -474,14 +478,14 @@
 
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
-      var latlng = L.latLng(marker.y, marker.x);
+      var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
       var icon = createCustomMarkerIcon(marker.categoryId);
       var lm = L.marker(latlng, { icon: icon, draggable: true }).addTo(map);
       leafletMarkers[marker.id] = lm;
       lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250 });
       lm.on('dragend', function() {
         var pos = lm.getLatLng();
-        Progress.updateCustomMarker(currentMapId, marker.id, { x: pos.lng, y: pos.lat });
+        Progress.updateCustomMarker(currentMapId, marker.id, { lat: pos.lat, lng: pos.lng });
       });
     }
 
@@ -669,11 +673,15 @@
       map.eachLayer(function(layer) { map.removeLayer(layer); });
       leafletMarkers = {};
 
-      L.imageOverlay(newConfig.image, newConfig.bounds).addTo(map);
-      map.fitBounds(newConfig.bounds);
+      L.tileLayer(newConfig.tilePattern, {
+        minZoom: newConfig.minZoom || 8,
+        maxZoom: newConfig.maxZoom || 19,
+        noWrap: true
+      }).addTo(map);
+      map.setView(newConfig.center, newConfig.initialZoom || 11);
 
       currentMarkerData.markers.forEach(function(marker) {
-        var latlng = L.latLng(marker.y, marker.x);
+        var latlng = L.latLng(marker.lat, marker.lng);
         var icon = createMarkerIcon(marker.categoryId);
         var lm = L.marker(latlng, { icon: icon }).addTo(map);
         lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
@@ -933,8 +941,8 @@
         var markerData = {
           categoryId: catSelect.value,
           title: title,
-          x: latlng.lng,
-          y: latlng.lat,
+          lat: latlng.lat,
+          lng: latlng.lng,
           note: noteInput.value.trim()
         };
 

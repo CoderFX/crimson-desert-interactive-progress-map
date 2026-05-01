@@ -1,10 +1,12 @@
 window.CDM_MAPS = [
   {
-    id: "the-continent",
-    title: "The Continent",
-    image: "data/images/the-continent.jpg",
-    markersFile: "data/markers/the-continent.js",
-    bounds: [[0, 0], [1024, 1024]],
-    imageSize: [1024, 1024]
+    id: "pywel",
+    title: "Pywel",
+    markersFile: "data/markers/pywel.js",
+    tilePattern: "https://tiles.mapgenie.io/games/crimson-desert/pywel/default-v3/{z}/{y}/{x}.jpg",
+    minZoom: 8,
+    maxZoom: 19,
+    initialZoom: 11,
+    center: [0.69843, -0.77489]
   }
 ];
