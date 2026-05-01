@@ -2,7 +2,7 @@
 
 ## Overview
 
-A standalone, single-file interactive map application for Crimson Desert. Replicates MapGenie's full feature set (category groups, progress tracking, search, filtering) without requiring a server or account. Progress stored in localStorage with JSON file backup. Designed for sharing with others.
+A standalone interactive map application for Crimson Desert. Replicates MapGenie's full feature set (category groups, progress tracking, search, filtering) without requiring a server or account. Progress stored in localStorage with JSON file backup. Designed for sharing with others — zip the folder and send.
 
 ## Goals
 
@@ -12,7 +12,7 @@ A standalone, single-file interactive map application for Crimson Desert. Replic
 - JSON export/import for backup and sharing
 - Multi-map support (world map, dungeons, etc.)
 - Architecture ready for a future save file parser plug-in
-- Shareable: zip the folder and send to anyone
+- Shareable: zip the folder and send to anyone — works offline from `file://`
 
 ## Architecture
 
@@ -20,65 +20,86 @@ A standalone, single-file interactive map application for Crimson Desert. Replic
 
 ```
 crimson_desert_map/
-├── index.html              # Single-file app (Leaflet + all UI + JS inline)
+├── index.html              # App entry point (UI + inline JS/CSS)
+├── lib/
+│   ├── leaflet.js          # Leaflet bundled locally (no CDN dependency)
+│   └── leaflet.css
 ├── data/
-│   ├── maps.json           # Map registry (list of maps + metadata)
+│   ├── maps.js             # Map registry as JS (window.CDM_MAPS = [...])
 │   ├── markers/
-│   │   ├── the-continent.json
-│   │   ├── dungeons.json
-│   │   └── ...             # One file per map region
+│   │   ├── the-continent.js    # window.CDM_MARKERS["the-continent"] = {...}
+│   │   ├── dungeons.js
+│   │   └── ...
 │   └── images/
 │       ├── the-continent.jpg
 │       ├── dungeons.jpg
-│       └── ...             # One map image per map
+│       └── ...
 └── saves/                  # Future: save parser output directory
 ```
 
 ### Technology
 
-- **Leaflet.js** via CDN — map rendering, markers, popups
+- **Leaflet.js** bundled locally in `lib/` — no CDN, works offline from `file://`
 - **Vanilla JS** — no framework, no build step
 - **CSS** — inline in `index.html`, dark theme to match game aesthetic
 - **localStorage** — progress persistence
 - **File API** — JSON export/import
 
-### Why Single File
+### Why This Approach
 
-- No npm, no build tools, no server
-- Share by zipping the folder
-- Opens in any browser (Chrome, Brave, Firefox, Edge)
+- No npm, no build tools, no server required
+- Share by zipping the folder — opens directly from `file://` in any browser
+- Marker data files are `.js` (not `.json`) loaded via `<script>` tags — avoids `fetch()` which is blocked on `file://`
 - Marker data and map images are separate files so the database can be updated independently
+
+### Data Loading (file:// Compatible)
+
+Since `fetch()` is blocked on `file://`, all data files are `.js` files that register themselves on `window`:
+
+```html
+<!-- index.html loads data via script tags -->
+<script src="data/maps.js"></script>
+<script src="data/markers/the-continent.js"></script>
+<!-- App code reads window.CDM_MAPS, window.CDM_MARKERS["the-continent"] -->
+```
+
+`index.html` dynamically creates `<script>` tags when switching maps to load marker data on demand.
 
 ## Data Model
 
-### Map Registry (`data/maps.json`)
+### Map Registry (`data/maps.js`)
 
-```json
-[
+```js
+window.CDM_MAPS = [
   {
     "id": "the-continent",
     "title": "The Continent",
-    "image": "images/the-continent.jpg",
-    "markers": "markers/the-continent.json",
-    "bounds": [[0, 0], [1000, 1000]]
+    "image": "data/images/the-continent.jpg",
+    "markersFile": "data/markers/the-continent.js",
+    "bounds": [[0, 0], [1000, 1000]],
+    "imageSize": [4096, 4096]
   },
   {
     "id": "dungeon-a",
     "title": "Some Dungeon",
-    "image": "images/dungeon-a.jpg",
-    "markers": "markers/dungeon-a.json",
-    "bounds": [[0, 0], [500, 500]]
+    "image": "data/images/dungeon-a.jpg",
+    "markersFile": "data/markers/dungeon-a.js",
+    "bounds": [[0, 0], [500, 500]],
+    "imageSize": [2048, 2048]
   }
-]
+];
 ```
 
 - `bounds` defines the coordinate space for the image overlay (Leaflet CRS.Simple)
-- `image` and `markers` are paths relative to `data/`
+- `imageSize` is the actual pixel dimensions of the map image — coordinates map 1:1 to image pixels
+- `image` and `markersFile` are paths relative to `index.html`
 
-### Marker Data (`data/markers/<map-id>.json`)
+### Marker Data (`data/markers/<map-id>.js`)
 
-```json
-{
+```js
+window.CDM_MARKERS = window.CDM_MARKERS || {};
+window.CDM_MARKERS["the-continent"] = {
+  "schemaVersion": 1,
   "groups": [
     {
       "id": "locations",
@@ -116,22 +137,24 @@ crimson_desert_map/
       "categoryId": "fast-travel",
       "title": "Lunaris Waypoint",
       "description": "Near the northern bridge",
-      "lat": 120.5,
-      "lng": 340.2
+      "x": 340.2,
+      "y": 120.5
     }
   ]
-}
+};
 ```
 
 - Each marker has a unique `id` within its map
 - `categoryId` links to a category defined in `groups`
-- `lat`/`lng` are pixel coordinates in Leaflet's CRS.Simple coordinate system
+- **`x`/`y` are image pixel coordinates** — `x` is horizontal (left-to-right), `y` is vertical (top-to-bottom). Mapped to Leaflet as `L.latLng(y, x)` since CRS.Simple treats lat as vertical axis
+- `schemaVersion` enables future migration of marker data format
 - Icons are CSS classes or emoji — no external icon sprites needed initially
 
 ### Progress Data (localStorage, key: `cdm-progress`)
 
 ```json
 {
+  "schemaVersion": 1,
   "the-continent": {
     "found": ["ft-001", "boss-003"],
     "notes": {
@@ -141,9 +164,10 @@ crimson_desert_map/
       {
         "id": "custom-1716000000000",
         "categoryId": "custom",
+        "isCustom": true,
         "title": "My spot",
-        "lat": 50,
-        "lng": 200,
+        "x": 200,
+        "y": 50,
         "note": "Good farming location"
       }
     ]
@@ -156,17 +180,19 @@ crimson_desert_map/
 }
 ```
 
+- `schemaVersion` at the root — enables migration when format changes
 - Progress is keyed by map ID — each map tracks independently
-- `found` is an array of marker IDs (from pre-populated data)
+- `found` is an array of marker IDs (from pre-populated data only)
 - `notes` is a map of marker ID → user note text
-- `customMarkers` are user-added markers with timestamp-based IDs
+- `customMarkers` have `isCustom: true` to distinguish from pre-populated markers
+- Custom markers are **excluded from progress totals** — only pre-populated markers count toward completion %
 - This entire object is what gets exported/imported as JSON backup
 
 ### Separation of Concerns
 
 | Data | Storage | Shareable? |
 |------|---------|------------|
-| Marker database | `data/markers/*.json` files | Yes — share the whole `data/` folder |
+| Marker database | `data/markers/*.js` files | Yes — share the whole `data/` folder |
 | Map images | `data/images/*.jpg` files | Yes — included in the zip |
 | User progress | localStorage + JSON export | Per-user, export to share |
 | Custom markers | Inside progress data | Per-user |
@@ -175,7 +201,7 @@ crimson_desert_map/
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  [Crimson Desert Map]    [Map Selector ▼]    [⚙ Tools]  │
+│  [Crimson Desert Map]  [Map Selector ▼]  [+ Add] [⚙]   │
 ├──────────────┬──────────────────────────────────────────┤
 │  Sidebar     │                                          │
 │  ┌────────┐  │                                          │
@@ -198,20 +224,28 @@ crimson_desert_map/
 
 ### Sidebar
 
-- **Search box** — filters markers by title. Matches show in sidebar AND on map (non-matching markers dim)
+- **Search box** — filters markers by title within visible (checked) categories. Non-matching markers dim to 20% opacity on the map. Category toggle takes precedence over search — if a category is unchecked, its markers stay hidden regardless of search matches
 - **Category groups** — collapsible. Click group header to expand/collapse. Each category has a checkbox to toggle visibility on the map
-- **Per-category progress** — `3/12` found count next to each category name
-- **Overall progress** — bar + percentage at the bottom of the sidebar
+- **Per-category progress** — `3/12` found count next to each category name (pre-populated markers only)
+- **Overall progress** — bar + percentage at the bottom of the sidebar (pre-populated markers only)
 
 ### Top Bar
 
 - **Title** — "Crimson Desert Map"
 - **Map selector** — dropdown to switch between maps. Switching loads new marker data + map image, preserves progress
-- **Tools menu (⚙)** — Export Progress, Import Progress, Import Save (future), Reset Progress, Share Marker Data
+- **Add Marker button (+)** — opens "Add Custom Marker" mode (click map to place). Works on both desktop and mobile (alternative to right-click)
+- **Tools menu (⚙)** — Export Progress, Import Progress, Import Save (future), Reset Progress, Export Marker Data
 
 ### Status Bar
 
-- Total found count across all categories on the current map
+- Total found count across all categories on the current map (pre-populated only)
+
+### Filter Precedence
+
+Visibility is determined by this priority chain (highest first):
+1. **Category toggle** — unchecked = always hidden, no exceptions
+2. **Search filter** — within visible categories, non-matching markers dim to 20% opacity
+3. **Found state** — found markers show at 50% opacity with checkmark overlay (applied on top of search dimming)
 
 ## Marker Interactions
 
@@ -233,6 +267,7 @@ crimson_desert_map/
 - **Mark Found** toggles found/unfound state
 - **Notes** text field — auto-saves to localStorage on blur
 - Pre-populated markers cannot be deleted or moved
+- All text rendered via `textContent` — never `innerHTML` (prevents XSS from shared marker data or imported notes)
 
 ### Found Marker Appearance
 
@@ -240,7 +275,14 @@ crimson_desert_map/
 - 50% opacity
 - Visually distinct from unfound markers at a glance
 
-### Right-Click Empty Map Space → Add Custom Marker
+### Adding Custom Markers
+
+Two methods (both work on desktop and mobile):
+
+1. **Toolbar button** — click "+" in top bar, then click map to place
+2. **Right-click** — right-click empty map space (desktop only)
+
+Both open the same popup:
 
 ```
 ┌──────────────────────┐
@@ -256,13 +298,15 @@ crimson_desert_map/
 - Custom markers get a visually distinct style (dashed border or diamond shape)
 - Custom markers can be edited (click → popup with Edit/Delete buttons)
 - Custom markers can be dragged to reposition
+- Custom markers are **not counted** in category or overall progress totals
 
 ### Search Behavior
 
-- Typing in search box filters sidebar categories to show only matching markers
+- Typing in search box filters within currently visible (checked) categories
 - On the map, non-matching markers dim to 20% opacity
 - Matching markers pulse or highlight briefly
 - Clear search restores all visibility
+- Search does not override category toggles — hidden categories stay hidden
 
 ## Tools / Import-Export
 
@@ -275,15 +319,21 @@ crimson_desert_map/
 ### Import Progress
 
 - File picker for `.json` files
-- Validates format before importing
+- Validates format and `schemaVersion` before importing
 - Asks: "Merge with existing progress or replace?"
-  - **Merge** — adds found markers and custom markers, preserves existing
+  - **Merge** — union of found marker IDs, keeps newer notes on conflict, appends custom markers (deduped by ID)
   - **Replace** — overwrites all progress
+- Unknown marker IDs (not in current marker data) are preserved silently — they may belong to a newer version of the marker database
+
+### Export Marker Data
+
+- Downloads the current map's marker data as a `.js` file
+- Allows sharing the marker database separately from progress
+- Recipients drop the file into their `data/markers/` folder
 
 ### Import Save (Future)
 
-- File picker or watch directory (`saves/`)
-- Reads `saves/parsed.json` (output of future save parser)
+- File picker to select a `parsed.json` file
 - Same merge/replace flow as Import Progress
 - Parser interface contract:
 
@@ -298,7 +348,7 @@ crimson_desert_map/
 ### Reset Progress
 
 - Confirmation dialog: "Reset all progress for [current map] or all maps?"
-- Two options: "This Map" / "All Maps" / "Cancel"
+- Three options: "This Map" / "All Maps" / "Cancel"
 
 ## Visual Design
 
@@ -306,15 +356,17 @@ crimson_desert_map/
 - **Color-coded groups** — each group header has its configured color
 - **Marker icons** — simple colored circles with category initials initially. Can be upgraded to custom SVG icons later
 - **Responsive** — sidebar collapses to hamburger menu on narrow screens
+- **All user-controlled text** (descriptions, notes, imported content) rendered via `textContent`, never `innerHTML`
 
 ## Future Save Parser Plug-in Architecture
 
 The app exposes a simple contract for save parsing:
 
-1. An external tool (Python script, Rust CLI, etc.) reads Crimson Desert save files
-2. It writes `saves/parsed.json` matching the import format
-3. The user clicks "Import Save" in the app to load it
-4. Later enhancement: the app could poll `saves/parsed.json` via fetch and auto-import on change (when served from a local HTTP server)
+1. An external tool (Python script, Rust CLI, etc.) reads Crimson Desert save files from `C:/Users/<user>/AppData/Local/Pearl Abyss/CD/save/<steamId>/`
+2. Save files are proprietary binary (`.save` format with `SAVE` magic header, encrypted/compressed body)
+3. The parser outputs `saves/parsed.json` matching the import format above
+4. The user clicks "Import Save" in the app to load it
+5. Later enhancement: if served from a local HTTP server, the app could poll `saves/parsed.json` and auto-import on change
 
 The parser is a completely separate project — the map app just consumes its output.
 
@@ -323,6 +375,7 @@ The parser is a completely separate project — the map app just consumes its ou
 - User accounts or authentication
 - Server-side storage
 - Real-time multiplayer/sync
-- Tile-based map rendering (using single image overlay)
+- Tile-based map rendering (using single image overlay — acceptable unless map images exceed ~8K resolution)
 - Mobile-native app (web-only, but responsive)
 - Reverse engineering the `.save` file format (separate future project)
+- Detailed error UX — v1 uses `console.warn` + silent fallbacks for missing data, storage errors, etc.
