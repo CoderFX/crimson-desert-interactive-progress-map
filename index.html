@@ -701,11 +701,8 @@
       });
     }
 
-    // --- Apply visibility filters ---
+    // --- Apply visibility filters (category layer groups only, no per-marker iteration) ---
     function applyFilters() {
-      var searchText = document.getElementById('search-input').value.toLowerCase();
-
-      // Toggle category layer groups (instant, no per-marker iteration)
       Object.keys(categoryLayers).forEach(function(catId) {
         var visible = categoryVisibility[catId] !== false;
         if (visible && !map.hasLayer(categoryLayers[catId])) {
@@ -714,25 +711,6 @@
           map.removeLayer(categoryLayers[catId]);
         }
       });
-
-      // Search: dim non-matching markers via DOM opacity
-      if (searchText) {
-        currentMarkerData.markers.forEach(function(marker) {
-          var lm = leafletMarkers[marker.id];
-          if (!lm) return;
-          var el = lm.getElement && lm.getElement();
-          if (!el) return;
-          var matches = marker.title.toLowerCase().indexOf(searchText) !== -1;
-          el.style.opacity = matches ? '' : '0.15';
-        });
-      } else {
-        currentMarkerData.markers.forEach(function(marker) {
-          var lm = leafletMarkers[marker.id];
-          if (!lm) return;
-          var el = lm.getElement && lm.getElement();
-          if (el) el.style.opacity = '';
-        });
-      }
     }
 
     // --- Update progress display ---
@@ -751,26 +729,22 @@
       });
     }
 
-    // --- Debounce helper ---
-    var searchTimer = null;
-    function debounceSearch(fn, delay) {
-      if (searchTimer) clearTimeout(searchTimer);
-      searchTimer = setTimeout(fn, delay);
-    }
-
     // --- Search with results list ---
     var searchResultsDiv = document.getElementById('search-results');
+    var searchTimer = null;
     document.getElementById('search-input').addEventListener('input', function() {
-      var input = this;
-      debounceSearch(function() {
-      var q = input.value.trim().toLowerCase();
-      applyFilters();
+      var q = this.value.trim().toLowerCase();
+
+      if (searchTimer) clearTimeout(searchTimer);
 
       if (q.length < 2) {
         searchResultsDiv.style.display = 'none';
         searchResultsDiv.innerHTML = '';
         return;
       }
+
+      // Debounce the results rendering
+      searchTimer = setTimeout(function() {
 
       var matches = currentMarkerData.markers.filter(function(m) {
         return m.title.toLowerCase().indexOf(q) !== -1;
@@ -830,7 +804,8 @@
 
         searchResultsDiv.appendChild(row);
       });
-      }, 200);
+
+      }, 150);
     });
 
     // --- Found opacity slider ---
