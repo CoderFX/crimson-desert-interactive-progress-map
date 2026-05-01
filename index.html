@@ -531,35 +531,40 @@
 
     function updateMarkerAppearance(markerId, isFound) {
       var lm = leafletMarkers[markerId];
-      if (!lm || !lm.setStyle) return;
-      lm.setStyle({
-        fillOpacity: isFound ? foundOpacity : 0.9,
-        opacity: isFound ? foundOpacity : 1
+      if (!lm || !lm.setIcon) return;
+      lm.setIcon(createPinIcon(lm._cdmCategoryId, isFound));
+    }
+
+    // --- Create pin divIcon ---
+    function createPinIcon(categoryId, isFound) {
+      var color = getMarkerColor(categoryId);
+      var iconChar = getIconChar(categoryId);
+      return L.divIcon({
+        className: '',
+        html: createPinHtml(color, iconChar, isFound),
+        iconSize: [24, 32],
+        iconAnchor: [12, 32],
+        popupAnchor: [0, -32]
       });
     }
 
-    // --- Place pre-populated markers (canvas circleMarker for performance) ---
+    // --- Place pre-populated markers (pin icons with deferred DOM creation) ---
+    // Store marker data for deferred rendering
+    var markerDataById = {};
+
     function placeMarkers() {
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
-        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var lm = L.circleMarker(latlng, {
-          radius: 7,
-          fillColor: color,
-          color: '#fff',
-          weight: 1.5,
-          fillOpacity: isFound ? foundOpacity : 0.9,
-          opacity: isFound ? foundOpacity : 1,
-          renderer: canvasRenderer
-        });
+        var lm = L.marker(latlng, { icon: createPinIcon(marker.categoryId, isFound) });
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
           lm.unbindPopup();
-          lm.bindPopup(createPopupContent(marker), { maxWidth: 280, offset: [0, -5] }).openPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
         });
         leafletMarkers[marker.id] = lm;
+        markerDataById[marker.id] = marker;
 
         // Add to category layer group
         if (!categoryLayers[marker.categoryId]) {
@@ -580,22 +585,16 @@
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
       var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
-      var color = getMarkerColor(marker.categoryId);
-      var lm = L.circleMarker(latlng, {
-        radius: 8,
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9,
-        opacity: 1,
-        dashArray: '3 3',
-        renderer: canvasRenderer
-      }).addTo(map);
+      var lm = L.marker(latlng, { icon: createPinIcon(marker.categoryId, false), draggable: true }).addTo(map);
       lm._cdmCategoryId = marker.categoryId;
       leafletMarkers[marker.id] = lm;
       lm.on('click', function() {
         lm.unbindPopup();
-        lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250, offset: [0, -5] }).openPopup();
+        lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250 }).openPopup();
+      });
+      lm.on('dragend', function() {
+        var pos = lm.getLatLng();
+        Progress.updateCustomMarker(currentMapId, marker.id, { lat: pos.lat, lng: pos.lng });
       });
     }
 
@@ -716,23 +715,22 @@
         }
       });
 
-      // Search: only iterate if there's a search query (per-marker opacity)
+      // Search: dim non-matching markers via DOM opacity
       if (searchText) {
         currentMarkerData.markers.forEach(function(marker) {
           var lm = leafletMarkers[marker.id];
-          if (!lm || !lm.setStyle) return;
+          if (!lm) return;
+          var el = lm.getElement && lm.getElement();
+          if (!el) return;
           var matches = marker.title.toLowerCase().indexOf(searchText) !== -1;
-          var isFound = Progress.isFound(currentMapId, marker.id);
-          var baseOpacity = isFound ? foundOpacity : 0.9;
-          lm.setStyle({ fillOpacity: matches ? baseOpacity : 0.1, opacity: matches ? (isFound ? foundOpacity : 1) : 0.1 });
+          el.style.opacity = matches ? '' : '0.15';
         });
       } else {
-        // Reset all marker opacities
         currentMarkerData.markers.forEach(function(marker) {
           var lm = leafletMarkers[marker.id];
-          if (!lm || !lm.setStyle) return;
-          var isFound = Progress.isFound(currentMapId, marker.id);
-          lm.setStyle({ fillOpacity: isFound ? foundOpacity : 0.9, opacity: isFound ? foundOpacity : 1 });
+          if (!lm) return;
+          var el = lm.getElement && lm.getElement();
+          if (el) el.style.opacity = '';
         });
       }
     }
@@ -844,7 +842,8 @@
       foundOpacity = parseInt(opSlider.value) / 100;
       opVal.textContent = opSlider.value + '%';
       try { localStorage.setItem('cdm-found-opacity', foundOpacity); } catch(e) {}
-      applyFilters();
+      // Update found-opacity CSS for pin markers
+      document.getElementById('found-opacity-style').textContent = '.cdm-pin-found { opacity:' + foundOpacity + '; }';
     });
 
     // --- Hide All / Show All ---
@@ -916,26 +915,19 @@
       }).addTo(map);
       map.setView(newConfig.center, newConfig.initialZoom || 11);
 
+      markerDataById = {};
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
-        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var lm = L.circleMarker(latlng, {
-          radius: 7,
-          fillColor: color,
-          color: '#fff',
-          weight: 1.5,
-          fillOpacity: isFound ? foundOpacity : 0.9,
-          opacity: isFound ? foundOpacity : 1,
-          renderer: canvasRenderer
-        });
+        var lm = L.marker(latlng, { icon: createPinIcon(marker.categoryId, isFound) });
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
           lm.unbindPopup();
-          lm.bindPopup(createPopupContent(marker), { maxWidth: 280, offset: [0, -5] }).openPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
         });
         leafletMarkers[marker.id] = lm;
+        markerDataById[marker.id] = marker;
         if (!categoryLayers[marker.categoryId]) categoryLayers[marker.categoryId] = L.layerGroup();
         categoryLayers[marker.categoryId].addLayer(lm);
       });
