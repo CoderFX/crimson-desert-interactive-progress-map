@@ -299,11 +299,17 @@
       return div.innerHTML;
     }
 
+    function sanitizeColor(color) {
+      if (/^#[0-9a-fA-F]{3,8}$/.test(color)) return color;
+      if (/^[a-zA-Z]+$/.test(color)) return color;
+      return '#888';
+    }
+
     // --- Create marker icon ---
     function createMarkerIcon(categoryId) {
       var info = categoryMap[categoryId];
       if (!info) return L.divIcon({ className: 'cdm-marker', html: '<div style="background:#888;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;">?</div>', iconSize: [24, 24], iconAnchor: [12, 12] });
-      var color = escapeHtml(info.group.color);
+      var color = sanitizeColor(info.group.color);
       var icon = escapeHtml(info.category.icon);
       return L.divIcon({
         className: 'cdm-marker',
@@ -315,7 +321,7 @@
 
     function createCustomMarkerIcon(categoryId) {
       var info = categoryMap[categoryId];
-      var color = escapeHtml(info ? info.group.color : '#9b59b6');
+      var color = sanitizeColor(info ? info.group.color : '#9b59b6');
       var label = escapeHtml(info ? info.category.icon : '\u2605');
       return L.divIcon({
         className: 'cdm-marker cdm-custom-marker',
@@ -935,6 +941,7 @@
         var saved = Progress.addCustomMarker(currentMapId, markerData);
         map.closePopup(popup);
         placeOneCustomMarker(saved);
+        applyFilters();
       });
     }
 
