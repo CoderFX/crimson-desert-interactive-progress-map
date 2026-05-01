@@ -359,6 +359,10 @@
     // --- Icon map (icon name -> unicode codepoint) ---
     var ICON_MAP = {"witchs_hideout":"e900","well":"e901","weapon":"e902","walker":"e903","wagon_fence":"e904","treasure_map_solution":"e905","treasure_map":"e906","treasure_chest":"e907","tool_blueprint":"e908","tool":"e909","timber_warehouse":"e90a","tannery":"e90b","tailors_shop":"e90c","stronghold":"e90d","street_shop":"e90e","stone":"e90f","stable":"e910","spire":"e911","spider_web":"e912","smithy":"e913","skyroot":"e914","silver_ore":"e915","shadow_sanctum":"e916","secret_space":"e917","secret_shop":"e918","sealed_abyss_artifact":"e919","scolecite_ore":"e91a","saddlery":"e91b","rubber":"e91c","royal_trading_post":"e91d","research_institute":"e921","red_seaweed":"e922","recipe":"e923","reading_material":"e924","ranchers_shop":"e925","puzzle_clue":"e926","provisioners_shop":"e927","produce":"e928","prey_animal":"e929","predator":"e92a","point_of_interest":"e92b","pine_mushroom":"e92c","pet_shop":"e92d","pet":"e92e","palmar_leaf":"e92f","pack":"e930","oakwood_mushroom":"e931","npc":"e932","notice_board":"e933","mysterious_creature":"e934","mount":"e935","money":"e936","miscellaneous":"e937","minigame":"e938","mineral_shop":"e939","mercury":"e93a","memory_fragment":"e93b","main_quest":"e93c","locked_treasure":"e93d","livestock_fence":"e93e","legendary_animal":"e93f","learn_skill":"e940","kuku_shop":"e941","kuku_pot_item":"e942","key_item":"e943","key":"e944","iron_ore":"e945","inn":"e946","infirmary":"e947","horse_black_market":"e948","honey":"e949","hidden_passage":"e94a","herb":"e94b","guard_station":"e94c","grocers_shop":"e94d","grindstone":"e94e","greymane_shrine":"e94f","green_algae":"e950","gold_ore":"e951","ginseng":"e952","garnet":"e953","furniture_shop":"e954","fishing_shop":"e955","faction_quest":"e956","equipment_shop":"e957","equipment_blueprint":"e958","epidote":"e959","elixir":"e95a","elite_enemy":"e95b","easter_egg":"e95c","dyehouse":"e95d","dye":"e95e","diamond":"e95f","decorative_stone_shop":"e960","coral_mushroom":"e961","copper_ore":"e962","contribution_shop":"e963","constellation":"e964","confessional":"e965","common_equipment":"e966","chest":"e967","cave":"e968","cauldron":"e969","butchery":"e96a","brimstone":"e96b","boss":"e96c","bonfire":"e96d","bloodstone":"e96e","black_market_trading":"e96f","bismuth_ore":"e970","bell":"e971","barracks":"e972","bank":"e973","back_alley_shop":"e974","azurite":"e975","artwork_shop":"e976","artillery_unit":"e977","armor":"e978","area":"e979","anvil":"e97a","alchemy_recipe":"e97b","accessory":"e97c","abyss_nexus":"e97d","abyss_gear":"e97e","abyss_enemy":"e97f","abyss_cresset":"e980","abyss_artifact":"e981"};
 
+    // --- Found opacity (loaded early, slider wired later) ---
+    var foundOpacity = 0.35;
+    try { var savedOp = localStorage.getItem('cdm-found-opacity'); if (savedOp) foundOpacity = parseFloat(savedOp); } catch(e) {}
+
     // --- Marker style helpers ---
     function getMarkerColor(categoryId) {
       var info = categoryMap[categoryId];
@@ -390,15 +394,20 @@
       return safe;
     }
 
-    // --- Init Map (standard CRS for web mercator tiles) ---
+    // --- Init Map (canvas renderer for performance with 7000+ markers) ---
+    var canvasRenderer = L.canvas({ padding: 0.5 });
     var mapBounds = L.latLngBounds([0.38, -1.38], [0.95, -0.48]);
     var map = L.map('map', {
       minZoom: currentMapConfig.minZoom || 8,
       maxZoom: currentMapConfig.maxZoom || 19,
       maxBounds: mapBounds.pad(0.1),
       maxBoundsViscosity: 0.8,
-      zoomControl: true
+      zoomControl: true,
+      renderer: canvasRenderer
     });
+
+    // --- Category LayerGroups for instant show/hide ---
+    var categoryLayers = {};
 
     L.tileLayer(currentMapConfig.tilePattern, {
       minZoom: currentMapConfig.minZoom || 8,
@@ -516,36 +525,48 @@
 
     function updateMarkerAppearance(markerId, isFound) {
       var lm = leafletMarkers[markerId];
-      if (!lm || !lm.setIcon) return;
-      lm.setIcon(createMarkerIcon(lm._cdmCategoryId, isFound));
-    }
-
-    // --- Place pre-populated markers ---
-    function createMarkerIcon(categoryId, isFound) {
-      var color = getMarkerColor(categoryId);
-      var iconChar = getIconChar(categoryId);
-      return L.divIcon({
-        className: '',
-        html: createPinHtml(color, iconChar, isFound),
-        iconSize: [24, 32],
-        iconAnchor: [12, 32],
-        popupAnchor: [0, -32]
+      if (!lm || !lm.setStyle) return;
+      lm.setStyle({
+        fillOpacity: isFound ? foundOpacity : 0.9,
+        opacity: isFound ? foundOpacity : 1
       });
     }
 
+    // --- Place pre-populated markers (canvas circleMarker for performance) ---
     function placeMarkers() {
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
+        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var icon = createMarkerIcon(marker.categoryId, isFound);
-        var lm = L.marker(latlng, { icon: icon }).addTo(map);
+        var lm = L.circleMarker(latlng, {
+          radius: 7,
+          fillColor: color,
+          color: '#fff',
+          weight: 1.5,
+          fillOpacity: isFound ? foundOpacity : 0.9,
+          opacity: isFound ? foundOpacity : 1,
+          renderer: canvasRenderer
+        });
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
           lm.unbindPopup();
-          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280, offset: [0, -5] }).openPopup();
         });
         leafletMarkers[marker.id] = lm;
+
+        // Add to category layer group
+        if (!categoryLayers[marker.categoryId]) {
+          categoryLayers[marker.categoryId] = L.layerGroup();
+        }
+        categoryLayers[marker.categoryId].addLayer(lm);
+      });
+
+      // Add visible category layers to map
+      Object.keys(categoryLayers).forEach(function(catId) {
+        if (categoryVisibility[catId] !== false) {
+          categoryLayers[catId].addTo(map);
+        }
       });
     }
     placeMarkers();
@@ -553,14 +574,22 @@
     // --- Place custom markers ---
     function placeOneCustomMarker(marker) {
       var latlng = L.latLng(marker.lat || marker.y, marker.lng || marker.x);
-      var icon = createMarkerIcon(marker.categoryId, false);
-      var lm = L.marker(latlng, { icon: icon, draggable: true }).addTo(map);
+      var color = getMarkerColor(marker.categoryId);
+      var lm = L.circleMarker(latlng, {
+        radius: 8,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9,
+        opacity: 1,
+        dashArray: '3 3',
+        renderer: canvasRenderer
+      }).addTo(map);
       lm._cdmCategoryId = marker.categoryId;
       leafletMarkers[marker.id] = lm;
-      lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250 });
-      lm.on('dragend', function() {
-        var pos = lm.getLatLng();
-        Progress.updateCustomMarker(currentMapId, marker.id, { lat: pos.lat, lng: pos.lng });
+      lm.on('click', function() {
+        lm.unbindPopup();
+        lm.bindPopup(createCustomPopupContent(marker), { maxWidth: 250, offset: [0, -5] }).openPopup();
       });
     }
 
@@ -671,26 +700,35 @@
     function applyFilters() {
       var searchText = document.getElementById('search-input').value.toLowerCase();
 
-      function filterMarker(marker) {
-        var lm = leafletMarkers[marker.id];
-        if (!lm) return;
-
-        var catVisible = categoryVisibility[marker.categoryId] !== false;
-        var matchesSearch = !searchText || marker.title.toLowerCase().indexOf(searchText) !== -1;
-        var isFound = marker.isCustom ? false : Progress.isFound(currentMapId, marker.id);
-
-        if (!catVisible || !matchesSearch) {
-          if (map.hasLayer(lm)) map.removeLayer(lm);
-        } else {
-          if (!map.hasLayer(lm)) map.addLayer(lm);
-          if (lm.setIcon) {
-            lm.setIcon(createMarkerIcon(marker.categoryId, isFound));
-          }
+      // Toggle category layer groups (instant, no per-marker iteration)
+      Object.keys(categoryLayers).forEach(function(catId) {
+        var visible = categoryVisibility[catId] !== false;
+        if (visible && !map.hasLayer(categoryLayers[catId])) {
+          categoryLayers[catId].addTo(map);
+        } else if (!visible && map.hasLayer(categoryLayers[catId])) {
+          map.removeLayer(categoryLayers[catId]);
         }
-      }
+      });
 
-      currentMarkerData.markers.forEach(filterMarker);
-      Progress.getCustomMarkers(currentMapId).forEach(filterMarker);
+      // Search: only iterate if there's a search query (per-marker opacity)
+      if (searchText) {
+        currentMarkerData.markers.forEach(function(marker) {
+          var lm = leafletMarkers[marker.id];
+          if (!lm || !lm.setStyle) return;
+          var matches = marker.title.toLowerCase().indexOf(searchText) !== -1;
+          var isFound = Progress.isFound(currentMapId, marker.id);
+          var baseOpacity = isFound ? foundOpacity : 0.9;
+          lm.setStyle({ fillOpacity: matches ? baseOpacity : 0.1, opacity: matches ? (isFound ? foundOpacity : 1) : 0.1 });
+        });
+      } else {
+        // Reset all marker opacities
+        currentMarkerData.markers.forEach(function(marker) {
+          var lm = leafletMarkers[marker.id];
+          if (!lm || !lm.setStyle) return;
+          var isFound = Progress.isFound(currentMapId, marker.id);
+          lm.setStyle({ fillOpacity: isFound ? foundOpacity : 0.9, opacity: isFound ? foundOpacity : 1 });
+        });
+      }
     }
 
     // --- Update progress display ---
@@ -709,10 +747,19 @@
       });
     }
 
+    // --- Debounce helper ---
+    var searchTimer = null;
+    function debounceSearch(fn, delay) {
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(fn, delay);
+    }
+
     // --- Search with results list ---
     var searchResultsDiv = document.getElementById('search-results');
     document.getElementById('search-input').addEventListener('input', function() {
-      var q = this.value.trim().toLowerCase();
+      var input = this;
+      debounceSearch(function() {
+      var q = input.value.trim().toLowerCase();
       applyFilters();
 
       if (q.length < 2) {
@@ -772,11 +819,10 @@
 
         searchResultsDiv.appendChild(row);
       });
+      }, 200);
     });
 
     // --- Found opacity slider ---
-    var foundOpacity = 0.35;
-    try { var savedOp = localStorage.getItem('cdm-found-opacity'); if (savedOp) foundOpacity = parseFloat(savedOp); } catch(e) {}
     var opSlider = document.getElementById('found-opacity');
     var opVal = document.getElementById('found-opacity-val');
     opSlider.value = Math.round(foundOpacity * 100);
@@ -785,8 +831,7 @@
       foundOpacity = parseInt(opSlider.value) / 100;
       opVal.textContent = opSlider.value + '%';
       try { localStorage.setItem('cdm-found-opacity', foundOpacity); } catch(e) {}
-      // Update CSS rule for found pins
-      document.getElementById('found-opacity-style').textContent = '.cdm-pin-found { opacity:' + foundOpacity + '; }';
+      applyFilters();
     });
 
     // --- Hide All / Show All ---
@@ -849,6 +894,7 @@
 
       map.eachLayer(function(layer) { map.removeLayer(layer); });
       leafletMarkers = {};
+      categoryLayers = {};
 
       L.tileLayer(newConfig.tilePattern, {
         minZoom: newConfig.minZoom || 8,
@@ -859,16 +905,30 @@
 
       currentMarkerData.markers.forEach(function(marker) {
         var latlng = L.latLng(marker.lat, marker.lng);
+        var color = getMarkerColor(marker.categoryId);
         var isFound = Progress.isFound(currentMapId, marker.id);
-        var icon = createMarkerIcon(marker.categoryId, isFound);
-        var lm = L.marker(latlng, { icon: icon }).addTo(map);
+        var lm = L.circleMarker(latlng, {
+          radius: 7,
+          fillColor: color,
+          color: '#fff',
+          weight: 1.5,
+          fillOpacity: isFound ? foundOpacity : 0.9,
+          opacity: isFound ? foundOpacity : 1,
+          renderer: canvasRenderer
+        });
         lm._cdmCategoryId = marker.categoryId;
         lm._cdmMarker = marker;
         lm.on('click', function() {
           lm.unbindPopup();
-          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280, offset: [0, -5] }).openPopup();
         });
         leafletMarkers[marker.id] = lm;
+        if (!categoryLayers[marker.categoryId]) categoryLayers[marker.categoryId] = L.layerGroup();
+        categoryLayers[marker.categoryId].addLayer(lm);
+      });
+
+      Object.keys(categoryLayers).forEach(function(catId) {
+        if (categoryVisibility[catId] !== false) categoryLayers[catId].addTo(map);
       });
 
       placeCustomMarkers();
