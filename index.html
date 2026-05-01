@@ -312,13 +312,24 @@
       });
     });
 
-    // --- Category visibility state ---
-    var categoryVisibility = { custom: true };
-    currentMarkerData.groups.forEach(function(group) {
-      group.categories.forEach(function(cat) {
-        categoryVisibility[cat.id] = true;
+    // --- Category visibility state (persisted to localStorage) ---
+    var CDM_VIS_KEY = 'cdm-category-visibility';
+    var categoryVisibility;
+    try {
+      var savedVis = localStorage.getItem(CDM_VIS_KEY);
+      categoryVisibility = savedVis ? JSON.parse(savedVis) : null;
+    } catch(e) { categoryVisibility = null; }
+    if (!categoryVisibility) {
+      categoryVisibility = { custom: true };
+      currentMarkerData.groups.forEach(function(group) {
+        group.categories.forEach(function(cat) {
+          categoryVisibility[cat.id] = true;
+        });
       });
-    });
+    }
+    function saveVisibility() {
+      try { localStorage.setItem(CDM_VIS_KEY, JSON.stringify(categoryVisibility)); } catch(e) {}
+    }
 
     // --- Escape HTML to prevent XSS from shared marker data ---
     function escapeHtml(str) {
@@ -577,6 +588,7 @@
         groupCheckbox.addEventListener('change', function() {
           var checked = groupCheckbox.checked;
           group.categories.forEach(function(c) { categoryVisibility[c.id] = checked; });
+          saveVisibility();
           applyFilters();
           renderSidebar();
         });
@@ -600,6 +612,7 @@
           checkbox.checked = categoryVisibility[cat.id] !== false;
           checkbox.addEventListener('change', function() {
             categoryVisibility[cat.id] = checkbox.checked;
+            saveVisibility();
             applyFilters();
             // Update group checkbox state
             var allOn = group.categories.every(function(c) { return categoryVisibility[c.id] !== false; });
@@ -692,12 +705,14 @@
     // --- Hide All / Show All ---
     document.getElementById('btn-hide-all').addEventListener('click', function() {
       Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
+      saveVisibility();
       applyFilters();
       renderSidebar();
     });
 
     document.getElementById('btn-show-all').addEventListener('click', function() {
       Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = true; });
+      saveVisibility();
       applyFilters();
       renderSidebar();
     });
