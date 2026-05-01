@@ -289,7 +289,7 @@
     });
 
     // --- Category visibility state ---
-    var categoryVisibility = {};
+    var categoryVisibility = { custom: true };
     currentMarkerData.groups.forEach(function(group) {
       group.categories.forEach(function(cat) {
         categoryVisibility[cat.id] = true;
@@ -315,10 +315,23 @@
       return info ? sanitizeColor(info.group.color) : '#888';
     }
 
+    // --- Simple markdown to safe HTML ---
+    function renderMarkdown(text) {
+      if (!text) return '';
+      var safe = escapeHtml(text);
+      safe = safe.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+      safe = safe.replace(/\*(.+?)\*/g, '<i>$1</i>');
+      safe = safe.replace(/\n/g, '<br>');
+      return safe;
+    }
+
     // --- Init Map (standard CRS for web mercator tiles) ---
+    var mapBounds = L.latLngBounds([0.38, -1.38], [0.95, -0.48]);
     var map = L.map('map', {
       minZoom: currentMapConfig.minZoom || 8,
       maxZoom: currentMapConfig.maxZoom || 19,
+      maxBounds: mapBounds.pad(0.1),
+      maxBoundsViscosity: 0.8,
       zoomControl: true
     });
 
@@ -355,8 +368,17 @@
       if (marker.description) {
         var desc = document.createElement('div');
         desc.style.cssText = 'font-size:12px;margin-bottom:6px;';
-        desc.textContent = marker.description;
+        desc.innerHTML = renderMarkdown(marker.description);
         container.appendChild(desc);
+      }
+
+      if (marker.media) {
+        var img = document.createElement('img');
+        img.src = marker.media;
+        img.style.cssText = 'width:100%;max-height:150px;object-fit:cover;border-radius:4px;margin-bottom:6px;cursor:pointer;';
+        img.addEventListener('click', function() { window.open(marker.media, '_blank'); });
+        img.onerror = function() { img.style.display = 'none'; };
+        container.appendChild(img);
       }
 
       var noteLabel = document.createElement('label');
@@ -445,14 +467,18 @@
         var isFound = Progress.isFound(currentMapId, marker.id);
         var lm = L.circleMarker(latlng, {
           radius: 6,
-          fillColor: color,
+          fillColor: isFound ? '#27ae60' : color,
           color: '#fff',
           weight: 1.5,
-          fillOpacity: isFound ? 0.4 : 0.9,
-          opacity: isFound ? 0.4 : 1
+          fillOpacity: isFound ? 0.3 : 0.9,
+          opacity: isFound ? 0.3 : 1
         }).addTo(map);
-        lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
         lm._cdmCategoryId = marker.categoryId;
+        lm._cdmMarker = marker;
+        lm.on('click', function() {
+          lm.unbindPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+        });
         leafletMarkers[marker.id] = lm;
       });
     }
@@ -526,7 +552,7 @@
           var iconSpan = document.createElement('span');
           iconSpan.className = 'category-icon';
           iconSpan.style.background = group.color;
-          iconSpan.textContent = cat.icon;
+          iconSpan.textContent = cat.title.charAt(0).toUpperCase();
 
           var titleSpan = document.createElement('span');
           titleSpan.className = 'category-title';
@@ -654,7 +680,7 @@
       currentMarkerData = window.CDM_MARKERS[newMapId];
 
       categoryMap = {};
-      categoryVisibility = {};
+      categoryVisibility = { custom: true };
       currentMarkerData.groups.forEach(function(group) {
         group.categories.forEach(function(cat) {
           categoryMap[cat.id] = { category: cat, group: group };
@@ -684,8 +710,12 @@
           fillOpacity: isFound ? 0.3 : 0.9,
           opacity: isFound ? 0.3 : 1
         }).addTo(map);
-        lm.bindPopup(createPopupContent(marker), { maxWidth: 250 });
         lm._cdmCategoryId = marker.categoryId;
+        lm._cdmMarker = marker;
+        lm.on('click', function() {
+          lm.unbindPopup();
+          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+        });
         leafletMarkers[marker.id] = lm;
       });
 
