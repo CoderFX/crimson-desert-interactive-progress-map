@@ -528,6 +528,21 @@
         var titleSpan = document.createElement('span');
         titleSpan.textContent = group.title;
 
+        // Group-level toggle checkbox
+        var groupCheckbox = document.createElement('input');
+        groupCheckbox.type = 'checkbox';
+        groupCheckbox.className = 'category-checkbox';
+        var allVisible = group.categories.every(function(c) { return categoryVisibility[c.id] !== false; });
+        groupCheckbox.checked = allVisible;
+        groupCheckbox.addEventListener('click', function(e) { e.stopPropagation(); });
+        groupCheckbox.addEventListener('change', function() {
+          var checked = groupCheckbox.checked;
+          group.categories.forEach(function(c) { categoryVisibility[c.id] = checked; });
+          applyFilters();
+          renderSidebar();
+        });
+
+        header.appendChild(groupCheckbox);
         header.appendChild(arrow);
         header.appendChild(colorDot);
         header.appendChild(titleSpan);
@@ -547,6 +562,11 @@
           checkbox.addEventListener('change', function() {
             categoryVisibility[cat.id] = checkbox.checked;
             applyFilters();
+            // Update group checkbox state
+            var allOn = group.categories.every(function(c) { return categoryVisibility[c.id] !== false; });
+            var anyOn = group.categories.some(function(c) { return categoryVisibility[c.id] !== false; });
+            groupCheckbox.checked = allOn;
+            groupCheckbox.indeterminate = !allOn && anyOn;
           });
 
           var iconSpan = document.createElement('span');
