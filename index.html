@@ -123,6 +123,7 @@
     <span id="topbar-title">Crimson Desert Map</span>
     <select id="map-selector"></select>
     <span class="topbar-spacer"></span>
+    <button class="topbar-btn" id="btn-faction-layer" title="Toggle faction overlay">Factions</button>
     <button class="topbar-btn" id="btn-add-marker" title="Add custom marker">+ Add</button>
     <button class="topbar-btn" id="btn-tools" title="Tools">&#9881;</button>
     <div id="tools-menu">
@@ -147,11 +148,15 @@
         <button id="btn-hide-all" style="flex:1;padding:4px;background:#2a2a4a;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:11px;cursor:pointer;">Hide All</button>
         <button id="btn-show-all" style="flex:1;padding:4px;background:#2a2a4a;border:1px solid #444;border-radius:4px;color:#e0e0e0;font-size:11px;cursor:pointer;">Show All</button>
       </div>
-      <div style="margin-top:8px;">
-        <label style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:6px;">
-          Found opacity:
-          <input type="range" id="found-opacity" min="5" max="100" style="flex:1;accent-color:#c0392b;">
-          <span id="found-opacity-val" style="font-size:11px;width:28px;text-align:right;"></span>
+      <div style="display:flex;gap:6px;margin-top:4px;align-items:center;">
+        <label style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="hide-found" style="accent-color:#c0392b;cursor:pointer;">
+          Hide found
+        </label>
+        <span style="flex:1;"></span>
+        <label style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">
+          <input type="range" id="found-opacity" min="5" max="100" style="width:60px;accent-color:#c0392b;">
+          <span id="found-opacity-val" style="font-size:10px;width:24px;"></span>
         </label>
       </div>
     </div>
@@ -394,16 +399,14 @@
       return safe;
     }
 
-    // --- Init Map (canvas renderer for performance with 7000+ markers) ---
-    var canvasRenderer = L.canvas({ padding: 0.5 });
+    // --- Init Map ---
     var mapBounds = L.latLngBounds([0.38, -1.38], [0.95, -0.48]);
     var map = L.map('map', {
       minZoom: currentMapConfig.minZoom || 8,
       maxZoom: currentMapConfig.maxZoom || 19,
       maxBounds: mapBounds.pad(0.1),
       maxBoundsViscosity: 0.8,
-      zoomControl: true,
-      renderer: canvasRenderer
+      zoomControl: true
     });
 
     // --- Category LayerGroups for instant show/hide ---
@@ -414,6 +417,22 @@
       maxZoom: currentMapConfig.maxZoom || 19,
       noWrap: true
     }).addTo(map);
+
+    // Faction overlay layer
+    var factionLayer = L.tileLayer('https://tiles.mapgenie.io/games/crimson-desert/oats/faction-v3/{z}/{y}/{x}.jpg', {
+      minZoom: 8, maxZoom: 19, noWrap: true, opacity: 0.7
+    });
+    var factionVisible = false;
+    document.getElementById('btn-faction-layer').addEventListener('click', function() {
+      factionVisible = !factionVisible;
+      if (factionVisible) {
+        factionLayer.addTo(map);
+        this.style.background = '#c0392b';
+      } else {
+        map.removeLayer(factionLayer);
+        this.style.background = '';
+      }
+    });
 
     map.setView(currentMapConfig.center, currentMapConfig.initialZoom || 11);
 
@@ -689,6 +708,17 @@
           row.appendChild(iconSpan);
           row.appendChild(titleSpan);
           row.appendChild(countSpan);
+
+          // Right-click category to "show only this"
+          row.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
+            categoryVisibility[cat.id] = true;
+            saveVisibility();
+            applyFilters();
+            renderSidebar();
+          });
+
           catsDiv.appendChild(row);
         });
 
@@ -701,8 +731,13 @@
       });
     }
 
-    // --- Apply visibility filters (category layer groups only, no per-marker iteration) ---
+    // --- Hide found state ---
+    var hideFound = false;
+    try { hideFound = localStorage.getItem('cdm-hide-found') === 'true'; } catch(e) {}
+
+    // --- Apply visibility filters ---
     function applyFilters() {
+      // Toggle category layer groups
       Object.keys(categoryLayers).forEach(function(catId) {
         var visible = categoryVisibility[catId] !== false;
         if (visible && !map.hasLayer(categoryLayers[catId])) {
@@ -711,6 +746,18 @@
           map.removeLayer(categoryLayers[catId]);
         }
       });
+
+      // Hide found markers if toggle is on
+      if (hideFound) {
+        currentMarkerData.markers.forEach(function(marker) {
+          var lm = leafletMarkers[marker.id];
+          if (!lm) return;
+          if (Progress.isFound(currentMapId, marker.id)) {
+            var el = lm.getElement && lm.getElement();
+            if (el) el.style.display = 'none';
+          }
+        });
+      }
     }
 
     // --- Update progress display ---
@@ -728,6 +775,22 @@
         });
       });
     }
+
+    // --- Hide Found toggle ---
+    var hideFoundCheckbox = document.getElementById('hide-found');
+    hideFoundCheckbox.checked = hideFound;
+    hideFoundCheckbox.addEventListener('change', function() {
+      hideFound = hideFoundCheckbox.checked;
+      try { localStorage.setItem('cdm-hide-found', hideFound); } catch(e) {}
+      // Show all markers first, then re-filter
+      currentMarkerData.markers.forEach(function(marker) {
+        var lm = leafletMarkers[marker.id];
+        if (!lm) return;
+        var el = lm.getElement && lm.getElement();
+        if (el) el.style.display = '';
+      });
+      applyFilters();
+    });
 
     // --- Search with results list ---
     var searchResultsDiv = document.getElementById('search-results');
