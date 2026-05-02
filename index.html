@@ -160,6 +160,14 @@
     <div id="favorites-group"></div>
     <div id="search-results" style="display:none;max-height:200px;overflow-y:auto;border-bottom:1px solid #333;"></div>
     <div id="sidebar-categories"></div>
+    <div id="bank-timers" style="border-top:1px solid #333;padding:8px 12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:14px;">🏦</span>
+        <span style="font-size:12px;font-weight:bold;flex:1;">Bank Investments</span>
+        <button id="btn-add-timer" style="padding:2px 8px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:11px;cursor:pointer;">+ Add</button>
+      </div>
+      <div id="bank-timer-list"></div>
+    </div>
     <div id="sidebar-footer">
       <div class="progress-text" id="progress-text">0/0 found</div>
       <div class="progress-bar-container">
@@ -1179,6 +1187,95 @@
     renderSidebar();
     renderFavoritesBar();
     updateProgressDisplay();
+
+    // --- Bank Investment Timers ---
+    var CDM_TIMERS_KEY = 'cdm-bank-timers';
+    var bankTimers = [];
+    try { var st = localStorage.getItem(CDM_TIMERS_KEY); if (st) bankTimers = JSON.parse(st); } catch(e) {}
+    function saveBankTimers() {
+      try { localStorage.setItem(CDM_TIMERS_KEY, JSON.stringify(bankTimers)); } catch(e) {}
+    }
+
+    function renderBankTimers() {
+      var list = document.getElementById('bank-timer-list');
+      list.innerHTML = '';
+      if (bankTimers.length === 0) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'font-size:11px;color:#666;text-align:center;padding:4px;';
+        empty.textContent = 'No active investments';
+        list.appendChild(empty);
+        return;
+      }
+      bankTimers.forEach(function(timer, idx) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #2a2a4a;font-size:11px;';
+
+        var label = document.createElement('span');
+        label.style.cssText = 'flex:1;color:#ccc;';
+        label.textContent = timer.label || ('Investment ' + (idx + 1));
+        row.appendChild(label);
+
+        var countdown = document.createElement('span');
+        countdown.className = 'bank-timer-countdown';
+        countdown.dataset.idx = idx;
+        countdown.style.cssText = 'font-family:monospace;font-size:12px;font-weight:bold;';
+        row.appendChild(countdown);
+
+        var delBtn = document.createElement('span');
+        delBtn.style.cssText = 'cursor:pointer;color:#e74c3c;font-size:13px;';
+        delBtn.textContent = '\u00d7';
+        delBtn.title = 'Remove';
+        delBtn.addEventListener('click', function() {
+          bankTimers.splice(idx, 1);
+          saveBankTimers();
+          renderBankTimers();
+        });
+        row.appendChild(delBtn);
+
+        list.appendChild(row);
+      });
+    }
+
+    function updateBankCountdowns() {
+      var now = Date.now();
+      document.querySelectorAll('.bank-timer-countdown').forEach(function(el) {
+        var idx = parseInt(el.dataset.idx);
+        var timer = bankTimers[idx];
+        if (!timer) return;
+        var remaining = timer.endTime - now;
+        if (remaining <= 0) {
+          el.textContent = 'READY!';
+          el.style.color = '#27ae60';
+        } else {
+          var hrs = Math.floor(remaining / 3600000);
+          var mins = Math.floor((remaining % 3600000) / 60000);
+          var secs = Math.floor((remaining % 60000) / 1000);
+          el.textContent = (hrs > 0 ? hrs + 'h ' : '') + mins + 'm ' + secs + 's';
+          el.style.color = remaining < 600000 ? '#f39c12' : '#5A8EB2';
+        }
+      });
+    }
+
+    document.getElementById('btn-add-timer').addEventListener('click', function() {
+      var label = prompt('Investment name (e.g. "Gold Bars - Hernand Bank"):');
+      if (!label) return;
+      var hoursStr = prompt('How many hours until return?\n(e.g. 2 for 2 hours, 0.5 for 30 min)');
+      if (!hoursStr) return;
+      var hours = parseFloat(hoursStr);
+      if (isNaN(hours) || hours <= 0) { alert('Invalid hours'); return; }
+
+      bankTimers.push({
+        label: label,
+        startTime: Date.now(),
+        endTime: Date.now() + hours * 3600000,
+        hours: hours
+      });
+      saveBankTimers();
+      renderBankTimers();
+    });
+
+    renderBankTimers();
+    setInterval(updateBankCountdowns, 1000);
 
     // --- Map Selector ---
     // Map selector removed - single map (Pywel)
