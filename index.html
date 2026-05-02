@@ -844,8 +844,10 @@
     function renderFavoritesBar() {
       var container = document.getElementById('favorites-group');
       container.innerHTML = '';
+      container.style.borderBottom = '';
       var favKeys = Object.keys(favorites);
       if (favKeys.length === 0) return;
+      container.style.borderBottom = '3px solid #f1c40f';
 
       // Group header
       var header = document.createElement('div');
@@ -1048,7 +1050,7 @@
         row.appendChild(label);
 
         var catSpan = document.createElement('span');
-        catSpan.style.cssText = 'font-size:10px;color:#888;';
+        catSpan.style.cssText = 'font-size:10px;color:#888;white-space:nowrap;';
         catSpan.textContent = catInfo ? catInfo.category.title : '';
         row.appendChild(catSpan);
 
@@ -1059,6 +1061,21 @@
           check.textContent = '\u2713';
           row.appendChild(check);
         }
+
+        // Favorite star for the category
+        var catId = marker.categoryId;
+        var favStar = document.createElement('span');
+        favStar.style.cssText = 'cursor:pointer;font-size:12px;flex-shrink:0;color:' + (favorites[catId] ? '#f1c40f' : '#555') + ';';
+        favStar.textContent = favorites[catId] ? '\u2605' : '\u2606';
+        favStar.title = (favorites[catId] ? 'Remove ' : 'Add ') + (catInfo ? catInfo.category.title : '') + ' from favorites';
+        favStar.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (favorites[catId]) { delete favorites[catId]; } else { favorites[catId] = true; }
+          saveFavorites();
+          renderFavoritesBar();
+          renderSidebar();
+        });
+        row.appendChild(favStar);
 
         row.addEventListener('click', function() {
           // Ensure category is visible
