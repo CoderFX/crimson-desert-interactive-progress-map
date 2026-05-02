@@ -1,0 +1,1724 @@
+{
+  "timestamp": "20260502_183215",
+  "pid": 32664,
+  "anchors": {
+    "discovered": "0x440e603b7bf",
+    "unlocked": "0x440e6215c02",
+    "explored": "0x440e625d141",
+    "completion": "0x440e66ca3fb"
+  },
+  "snap1_hashes": {
+    "discovered": "cda6e8d80904e83a",
+    "unlocked": "76c3183f331eee43",
+    "explored": "b1d886702de9a465",
+    "completion": "9be497a6f0aa6d84"
+  },
+  "snap2_hashes": {
+    "discovered": "053d677dd60487cf",
+    "unlocked": "76c3183f331eee43",
+    "explored": "b1d886702de9a465",
+    "completion": "9be497a6f0aa6d84"
+  },
+  "regions": {
+    "discovered": {
+      "total_changes": 143,
+      "num_clusters": 25,
+      "details": [
+        {
+          "cluster_addr": "0x440e6004859",
+          "cluster_size": 17,
+          "num_bytes_changed": 3,
+          "changes": [
+            {
+              "addr": "0x440e6004859",
+              "offset": 5017754,
+              "old": 92,
+              "new": 216,
+              "old_hex": "0x5c",
+              "new_hex": "0xd8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004860",
+              "offset": 5017761,
+              "old": 4,
+              "new": 40,
+              "old_hex": "0x04",
+              "new_hex": "0x28",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004869",
+              "offset": 5017770,
+              "old": 116,
+              "new": 236,
+              "old_hex": "0x74",
+              "new_hex": "0xec",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 3831234560,
+          "uint32_new": 3839361024,
+          "int32_old": -463732736,
+          "int32_new": -455606272,
+          "float32_old": -1.6233134784864405e+22,
+          "float32_new": -3.1875973759370105e+22,
+          "uint64_old": 1197260324732928,
+          "uint64_new": 1197260332859392,
+          "double_old": 5.915251955792746e-309,
+          "double_new": 5.915251995942813e-309
+        },
+        {
+          "cluster_addr": "0x440e6004880",
+          "cluster_size": 12,
+          "num_bytes_changed": 6,
+          "changes": [
+            {
+              "addr": "0x440e6004880",
+              "offset": 5017793,
+              "old": 104,
+              "new": 184,
+              "old_hex": "0x68",
+              "new_hex": "0xb8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004881",
+              "offset": 5017794,
+              "old": 100,
+              "new": 35,
+              "old_hex": "0x64",
+              "new_hex": "0x23",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004883",
+              "offset": 5017796,
+              "old": 118,
+              "new": 132,
+              "old_hex": "0x76",
+              "new_hex": "0x84",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004888",
+              "offset": 5017801,
+              "old": 40,
+              "new": 216,
+              "old_hex": "0x28",
+              "new_hex": "0xd8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004889",
+              "offset": 5017802,
+              "old": 139,
+              "new": 148,
+              "old_hex": "0x8b",
+              "new_hex": "0x94",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600488b",
+              "offset": 5017804,
+              "old": 74,
+              "new": 70,
+              "old_hex": "0x4a",
+              "new_hex": "0x46",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 6580224,
+          "uint32_new": 2340864,
+          "int32_old": 6580224,
+          "int32_new": 2340864,
+          "float32_old": 9.220857786113305e-39,
+          "float32_new": 3.2802491283932486e-39,
+          "uint64_old": 1197874975369216,
+          "uint64_new": 1197935100672000,
+          "double_old": 5.91828873342859e-309,
+          "double_new": 5.918585791894104e-309
+        },
+        {
+          "cluster_addr": "0x440e60048a9",
+          "cluster_size": 17,
+          "num_bytes_changed": 3,
+          "changes": [
+            {
+              "addr": "0x440e60048a9",
+              "offset": 5017834,
+              "old": 72,
+              "new": 32,
+              "old_hex": "0x48",
+              "new_hex": "0x20",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60048b0",
+              "offset": 5017841,
+              "old": 21,
+              "new": 94,
+              "old_hex": "0x15",
+              "new_hex": "0x5e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60048b9",
+              "offset": 5017850,
+              "old": 227,
+              "new": 62,
+              "old_hex": "0xe3",
+              "new_hex": "0x3e",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 3846733824,
+          "uint32_new": 3844112384,
+          "int32_old": -448233472,
+          "int32_new": -450854912,
+          "float32_old": -5.917715498846024e+22,
+          "float32_new": -4.737123878128613e+22,
+          "uint64_old": 1197260340232192,
+          "uint64_new": 1197260337610752,
+          "double_old": 5.915252032369285e-309,
+          "double_new": 5.91525201941765e-309
+        },
+        {
+          "cluster_addr": "0x440e60048d8",
+          "cluster_size": 2,
+          "num_bytes_changed": 2,
+          "changes": [
+            {
+              "addr": "0x440e60048d8",
+              "offset": 5017881,
+              "old": 120,
+              "new": 168,
+              "old_hex": "0x78",
+              "new_hex": "0xa8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60048d9",
+              "offset": 5017882,
+              "old": 39,
+              "new": 136,
+              "old_hex": "0x27",
+              "new_hex": "0x88",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 2586624,
+          "uint32_new": 8955904,
+          "int32_old": 2586624,
+          "int32_new": 8955904,
+          "float32_old": 3.6246322389857156e-39,
+          "float32_new": 1.2549894521840487e-38,
+          "uint64_old": 1197685992814592,
+          "uint64_new": 1197685999183872,
+          "double_old": 5.91735503554956e-309,
+          "double_new": 5.917355067017984e-309
+        },
+        {
+          "cluster_addr": "0x440e6004996",
+          "cluster_size": 24,
+          "num_bytes_changed": 7,
+          "changes": [
+            {
+              "addr": "0x440e6004996",
+              "offset": 5018071,
+              "old": 0,
+              "new": 1,
+              "old_hex": "0x00",
+              "new_hex": "0x01",
+              "type": "bool_toggle"
+            },
+            {
+              "addr": "0x440e60049a0",
+              "offset": 5018081,
+              "old": 3,
+              "new": 8,
+              "old_hex": "0x03",
+              "new_hex": "0x08",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049a9",
+              "offset": 5018090,
+              "old": 128,
+              "new": 0,
+              "old_hex": "0x80",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit7"
+            },
+            {
+              "addr": "0x440e60049aa",
+              "offset": 5018091,
+              "old": 232,
+              "new": 0,
+              "old_hex": "0xe8",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049ab",
+              "offset": 5018092,
+              "old": 230,
+              "new": 0,
+              "old_hex": "0xe6",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049ac",
+              "offset": 5018093,
+              "old": 64,
+              "new": 0,
+              "old_hex": "0x40",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e60049ad",
+              "offset": 5018094,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            }
+          ],
+          "uint32_old": 2048,
+          "uint32_new": 16779264,
+          "int32_old": 2048,
+          "int32_new": 16779264,
+          "float32_old": 2.8698592549372254e-42,
+          "float32_new": 2.3515626734955625e-38,
+          "uint64_old": 8796227240192,
+          "uint64_new": 72066390265168128,
+          "double_old": 4.345913692392e-311,
+          "double_new": 7.305362709543627e-304
+        },
+        {
+          "cluster_addr": "0x440e60049c0",
+          "cluster_size": 13,
+          "num_bytes_changed": 6,
+          "changes": [
+            {
+              "addr": "0x440e60049c0",
+              "offset": 5018113,
+              "old": 120,
+              "new": 248,
+              "old_hex": "0x78",
+              "new_hex": "0xf8",
+              "type": "bitfield_flip_bit7"
+            },
+            {
+              "addr": "0x440e60049c1",
+              "offset": 5018114,
+              "old": 99,
+              "new": 111,
+              "old_hex": "0x63",
+              "new_hex": "0x6f",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049c8",
+              "offset": 5018121,
+              "old": 184,
+              "new": 136,
+              "old_hex": "0xb8",
+              "new_hex": "0x88",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049c9",
+              "offset": 5018122,
+              "old": 145,
+              "new": 78,
+              "old_hex": "0x91",
+              "new_hex": "0x4e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049cb",
+              "offset": 5018124,
+              "old": 118,
+              "new": 230,
+              "old_hex": "0x76",
+              "new_hex": "0xe6",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60049cc",
+              "offset": 5018125,
+              "old": 65,
+              "new": 64,
+              "old_hex": "0x41",
+              "new_hex": "0x40",
+              "type": "counter_decrement"
+            }
+          ],
+          "uint32_old": 6518784,
+          "uint32_new": 7337984,
+          "int32_old": 6518784,
+          "int32_new": 7337984,
+          "float32_old": 9.134762008465188e-39,
+          "float32_new": 1.0282705710440078e-38,
+          "uint64_old": 1197952284719104,
+          "uint64_new": 1197952285538304,
+          "double_old": 5.91867069236741e-309,
+          "double_new": 5.918670696414796e-309
+        },
+        {
+          "cluster_addr": "0x440e6004a38",
+          "cluster_size": 18,
+          "num_bytes_changed": 9,
+          "changes": [
+            {
+              "addr": "0x440e6004a38",
+              "offset": 5018233,
+              "old": 0,
+              "new": 192,
+              "old_hex": "0x00",
+              "new_hex": "0xc0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a39",
+              "offset": 5018234,
+              "old": 0,
+              "new": 117,
+              "old_hex": "0x00",
+              "new_hex": "0x75",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a3a",
+              "offset": 5018235,
+              "old": 0,
+              "new": 234,
+              "old_hex": "0x00",
+              "new_hex": "0xea",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a3b",
+              "offset": 5018236,
+              "old": 0,
+              "new": 230,
+              "old_hex": "0x00",
+              "new_hex": "0xe6",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a3c",
+              "offset": 5018237,
+              "old": 0,
+              "new": 64,
+              "old_hex": "0x00",
+              "new_hex": "0x40",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e6004a3d",
+              "offset": 5018238,
+              "old": 0,
+              "new": 4,
+              "old_hex": "0x00",
+              "new_hex": "0x04",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6004a40",
+              "offset": 5018241,
+              "old": 145,
+              "new": 148,
+              "old_hex": "0x91",
+              "new_hex": "0x94",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a48",
+              "offset": 5018249,
+              "old": 96,
+              "new": 160,
+              "old_hex": "0x60",
+              "new_hex": "0xa0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004a49",
+              "offset": 5018250,
+              "old": 206,
+              "new": 160,
+              "old_hex": "0xce",
+              "new_hex": "0xa0",
+              "type": "value_change"
+            }
+          ]
+        },
+        {
+          "cluster_addr": "0x440e6004bc9",
+          "cluster_size": 17,
+          "num_bytes_changed": 3,
+          "changes": [
+            {
+              "addr": "0x440e6004bc9",
+              "offset": 5018634,
+              "old": 8,
+              "new": 184,
+              "old_hex": "0x08",
+              "new_hex": "0xb8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bd0",
+              "offset": 5018641,
+              "old": 9,
+              "new": 19,
+              "old_hex": "0x09",
+              "new_hex": "0x13",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bd9",
+              "offset": 5018650,
+              "old": 232,
+              "new": 216,
+              "old_hex": "0xe8",
+              "new_hex": "0xd8",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 4010278912,
+          "uint32_new": 4021813248,
+          "int32_old": -284688384,
+          "int32_new": -273154048,
+          "float32_old": -4.208996133570293e+28,
+          "float32_new": -1.1389048361425499e+29,
+          "uint64_old": 1197260503777280,
+          "uint64_new": 1197260515311616,
+          "double_old": 5.91525284038938e-309,
+          "double_new": 5.91525289737657e-309
+        },
+        {
+          "cluster_addr": "0x440e6004bf8",
+          "cluster_size": 6,
+          "num_bytes_changed": 5,
+          "changes": [
+            {
+              "addr": "0x440e6004bf8",
+              "offset": 5018681,
+              "old": 104,
+              "new": 0,
+              "old_hex": "0x68",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bf9",
+              "offset": 5018682,
+              "old": 80,
+              "new": 0,
+              "old_hex": "0x50",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bfb",
+              "offset": 5018684,
+              "old": 118,
+              "new": 0,
+              "old_hex": "0x76",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bfc",
+              "offset": 5018685,
+              "old": 65,
+              "new": 0,
+              "old_hex": "0x41",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004bfd",
+              "offset": 5018686,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            }
+          ],
+          "uint32_old": 5269504,
+          "uint32_new": 0,
+          "int32_old": 5269504,
+          "int32_new": 0,
+          "float32_old": 7.384147862953481e-39,
+          "float32_new": 0.0,
+          "uint64_old": 1197874974058496,
+          "uint64_new": 0,
+          "double_old": 5.918288726952773e-309,
+          "double_new": 0.0
+        },
+        {
+          "cluster_addr": "0x440e6004e96",
+          "cluster_size": 24,
+          "num_bytes_changed": 12,
+          "changes": [
+            {
+              "addr": "0x440e6004e96",
+              "offset": 5019351,
+              "old": 0,
+              "new": 1,
+              "old_hex": "0x00",
+              "new_hex": "0x01",
+              "type": "bool_toggle"
+            },
+            {
+              "addr": "0x440e6004e99",
+              "offset": 5019354,
+              "old": 208,
+              "new": 0,
+              "old_hex": "0xd0",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004e9a",
+              "offset": 5019355,
+              "old": 248,
+              "new": 0,
+              "old_hex": "0xf8",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004e9b",
+              "offset": 5019356,
+              "old": 230,
+              "new": 0,
+              "old_hex": "0xe6",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004e9c",
+              "offset": 5019357,
+              "old": 64,
+              "new": 0,
+              "old_hex": "0x40",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e6004e9d",
+              "offset": 5019358,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6004ea0",
+              "offset": 5019361,
+              "old": 13,
+              "new": 32,
+              "old_hex": "0x0d",
+              "new_hex": "0x20",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004ea9",
+              "offset": 5019370,
+              "old": 72,
+              "new": 0,
+              "old_hex": "0x48",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004eaa",
+              "offset": 5019371,
+              "old": 248,
+              "new": 0,
+              "old_hex": "0xf8",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004eab",
+              "offset": 5019372,
+              "old": 230,
+              "new": 0,
+              "old_hex": "0xe6",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004eac",
+              "offset": 5019373,
+              "old": 64,
+              "new": 0,
+              "old_hex": "0x40",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e6004ead",
+              "offset": 5019374,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            }
+          ]
+        },
+        {
+          "cluster_addr": "0x440e6004ec0",
+          "cluster_size": 10,
+          "num_bytes_changed": 6,
+          "changes": [
+            {
+              "addr": "0x440e6004ec0",
+              "offset": 5019393,
+              "old": 72,
+              "new": 136,
+              "old_hex": "0x48",
+              "new_hex": "0x88",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004ec1",
+              "offset": 5019394,
+              "old": 2,
+              "new": 73,
+              "old_hex": "0x02",
+              "new_hex": "0x49",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004ec3",
+              "offset": 5019396,
+              "old": 32,
+              "new": 230,
+              "old_hex": "0x20",
+              "new_hex": "0xe6",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6004ec4",
+              "offset": 5019397,
+              "old": 65,
+              "new": 64,
+              "old_hex": "0x41",
+              "new_hex": "0x40",
+              "type": "counter_decrement"
+            },
+            {
+              "addr": "0x440e6004ec8",
+              "offset": 5019401,
+              "old": 232,
+              "new": 248,
+              "old_hex": "0xe8",
+              "new_hex": "0xf8",
+              "type": "bitfield_flip_bit4"
+            },
+            {
+              "addr": "0x440e6004ec9",
+              "offset": 5019402,
+              "old": 117,
+              "new": 1,
+              "old_hex": "0x75",
+              "new_hex": "0x01",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 149504,
+          "uint32_new": 4818944,
+          "int32_old": 149504,
+          "int32_new": 4818944,
+          "float32_old": 2.0949972561041745e-40,
+          "float32_new": 6.752778826867291e-39,
+          "uint64_old": 1197505601751040,
+          "uint64_new": 1197256498317312,
+          "double_old": 5.91646378527638e-309,
+          "double_new": 5.91523305078772e-309
+        },
+        {
+          "cluster_addr": "0x440e6005079",
+          "cluster_size": 17,
+          "num_bytes_changed": 7,
+          "changes": [
+            {
+              "addr": "0x440e6005079",
+              "offset": 5019834,
+              "old": 126,
+              "new": 0,
+              "old_hex": "0x7e",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600507a",
+              "offset": 5019835,
+              "old": 254,
+              "new": 0,
+              "old_hex": "0xfe",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600507b",
+              "offset": 5019836,
+              "old": 230,
+              "new": 0,
+              "old_hex": "0xe6",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600507c",
+              "offset": 5019837,
+              "old": 64,
+              "new": 0,
+              "old_hex": "0x40",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e600507d",
+              "offset": 5019838,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6005080",
+              "offset": 5019841,
+              "old": 14,
+              "new": 35,
+              "old_hex": "0x0e",
+              "new_hex": "0x23",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6005089",
+              "offset": 5019850,
+              "old": 35,
+              "new": 105,
+              "old_hex": "0x23",
+              "new_hex": "0x69",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 4269670400,
+          "uint32_new": 0,
+          "int32_old": -25296896,
+          "int32_new": 0,
+          "float32_old": -8.440597773234216e+37,
+          "float32_new": 0.0,
+          "uint64_old": 1197260763168768,
+          "uint64_new": 0,
+          "double_old": 5.91525412195361e-309,
+          "double_new": 0.0
+        },
+        {
+          "cluster_addr": "0x440e60050a1",
+          "cluster_size": 9,
+          "num_bytes_changed": 3,
+          "changes": [
+            {
+              "addr": "0x440e60050a1",
+              "offset": 5019874,
+              "old": 6,
+              "new": 36,
+              "old_hex": "0x06",
+              "new_hex": "0x24",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60050a8",
+              "offset": 5019881,
+              "old": 136,
+              "new": 248,
+              "old_hex": "0x88",
+              "new_hex": "0xf8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60050a9",
+              "offset": 5019882,
+              "old": 18,
+              "new": 6,
+              "old_hex": "0x12",
+              "new_hex": "0x06",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 456704,
+          "uint32_new": 2422784,
+          "int32_old": 456704,
+          "int32_new": 2422784,
+          "float32_old": 6.3997861385100126e-40,
+          "float32_new": 3.3950434985907376e-39,
+          "uint64_old": 1197935098787840,
+          "uint64_new": 1197935100753920,
+          "double_old": 5.918585782585116e-309,
+          "double_new": 5.91858579229884e-309
+        },
+        {
+          "cluster_addr": "0x440e6005166",
+          "cluster_size": 24,
+          "num_bytes_changed": 12,
+          "changes": [
+            {
+              "addr": "0x440e6005166",
+              "offset": 5020071,
+              "old": 1,
+              "new": 0,
+              "old_hex": "0x01",
+              "new_hex": "0x00",
+              "type": "bool_toggle"
+            },
+            {
+              "addr": "0x440e6005169",
+              "offset": 5020074,
+              "old": 0,
+              "new": 204,
+              "old_hex": "0x00",
+              "new_hex": "0xcc",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600516a",
+              "offset": 5020075,
+              "old": 0,
+              "new": 1,
+              "old_hex": "0x00",
+              "new_hex": "0x01",
+              "type": "bool_toggle"
+            },
+            {
+              "addr": "0x440e600516b",
+              "offset": 5020076,
+              "old": 0,
+              "new": 231,
+              "old_hex": "0x00",
+              "new_hex": "0xe7",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600516c",
+              "offset": 5020077,
+              "old": 0,
+              "new": 64,
+              "old_hex": "0x00",
+              "new_hex": "0x40",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e600516d",
+              "offset": 5020078,
+              "old": 0,
+              "new": 4,
+              "old_hex": "0x00",
+              "new_hex": "0x04",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6005170",
+              "offset": 5020081,
+              "old": 21,
+              "new": 16,
+              "old_hex": "0x15",
+              "new_hex": "0x10",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6005179",
+              "offset": 5020090,
+              "old": 0,
+              "new": 120,
+              "old_hex": "0x00",
+              "new_hex": "0x78",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600517a",
+              "offset": 5020091,
+              "old": 0,
+              "new": 1,
+              "old_hex": "0x00",
+              "new_hex": "0x01",
+              "type": "bool_toggle"
+            },
+            {
+              "addr": "0x440e600517b",
+              "offset": 5020092,
+              "old": 0,
+              "new": 231,
+              "old_hex": "0x00",
+              "new_hex": "0xe7",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600517c",
+              "offset": 5020093,
+              "old": 0,
+              "new": 64,
+              "old_hex": "0x00",
+              "new_hex": "0x40",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e600517d",
+              "offset": 5020094,
+              "old": 0,
+              "new": 4,
+              "old_hex": "0x00",
+              "new_hex": "0x04",
+              "type": "bitfield_flip_bit2"
+            }
+          ]
+        },
+        {
+          "cluster_addr": "0x440e6005190",
+          "cluster_size": 12,
+          "num_bytes_changed": 6,
+          "changes": [
+            {
+              "addr": "0x440e6005190",
+              "offset": 5020113,
+              "old": 8,
+              "new": 24,
+              "old_hex": "0x08",
+              "new_hex": "0x18",
+              "type": "bitfield_flip_bit4"
+            },
+            {
+              "addr": "0x440e6005191",
+              "offset": 5020114,
+              "old": 16,
+              "new": 160,
+              "old_hex": "0x10",
+              "new_hex": "0xa0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6005193",
+              "offset": 5020116,
+              "old": 158,
+              "new": 74,
+              "old_hex": "0x9e",
+              "new_hex": "0x4a",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6005198",
+              "offset": 5020121,
+              "old": 88,
+              "new": 168,
+              "old_hex": "0x58",
+              "new_hex": "0xa8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6005199",
+              "offset": 5020122,
+              "old": 46,
+              "new": 121,
+              "old_hex": "0x2e",
+              "new_hex": "0x79",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600519b",
+              "offset": 5020124,
+              "old": 74,
+              "new": 118,
+              "old_hex": "0x4a",
+              "new_hex": "0x76",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 1050624,
+          "uint32_new": 10491904,
+          "int32_old": 1050624,
+          "int32_new": 10491904,
+          "float32_old": 1.4722377977827966e-39,
+          "float32_new": 1.4702288963043406e-38,
+          "uint64_old": 1198046768531456,
+          "uint64_new": 1197686000719872,
+          "double_old": 5.91913750442512e-309,
+          "double_new": 5.91735507460683e-309
+        },
+        {
+          "cluster_addr": "0x440e60089f9",
+          "cluster_size": 18,
+          "num_bytes_changed": 4,
+          "changes": [
+            {
+              "addr": "0x440e60089f9",
+              "offset": 5034554,
+              "old": 32,
+              "new": 80,
+              "old_hex": "0x20",
+              "new_hex": "0x50",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e60089fa",
+              "offset": 5034555,
+              "old": 185,
+              "new": 187,
+              "old_hex": "0xb9",
+              "new_hex": "0xbb",
+              "type": "bitfield_flip_bit1"
+            },
+            {
+              "addr": "0x440e6008a09",
+              "offset": 5034570,
+              "old": 80,
+              "new": 224,
+              "old_hex": "0x50",
+              "new_hex": "0xe0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008a0a",
+              "offset": 5034571,
+              "old": 187,
+              "new": 188,
+              "old_hex": "0xbb",
+              "new_hex": "0xbc",
+              "type": "counter_increment"
+            }
+          ],
+          "uint32_old": 3105882112,
+          "uint32_new": 3142582272,
+          "int32_old": -1189085184,
+          "int32_new": -1152385024,
+          "float32_old": -0.000152587890625,
+          "float32_new": -0.003173828125,
+          "uint64_old": 1197263894347776,
+          "uint64_new": 1197263931047936,
+          "double_old": 5.9152695920334e-309,
+          "double_new": 5.91526977335628e-309
+        },
+        {
+          "cluster_addr": "0x440e6008a20",
+          "cluster_size": 12,
+          "num_bytes_changed": 8,
+          "changes": [
+            {
+              "addr": "0x440e6008a20",
+              "offset": 5034593,
+              "old": 168,
+              "new": 0,
+              "old_hex": "0xa8",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008a21",
+              "offset": 5034594,
+              "old": 101,
+              "new": 0,
+              "old_hex": "0x65",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008a23",
+              "offset": 5034596,
+              "old": 126,
+              "new": 0,
+              "old_hex": "0x7e",
+              "new_hex": "0x00",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008a24",
+              "offset": 5034597,
+              "old": 64,
+              "new": 0,
+              "old_hex": "0x40",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e6008a25",
+              "offset": 5034598,
+              "old": 4,
+              "new": 0,
+              "old_hex": "0x04",
+              "new_hex": "0x00",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6008a28",
+              "offset": 5034601,
+              "old": 88,
+              "new": 216,
+              "old_hex": "0x58",
+              "new_hex": "0xd8",
+              "type": "bitfield_flip_bit7"
+            },
+            {
+              "addr": "0x440e6008a29",
+              "offset": 5034602,
+              "old": 56,
+              "new": 88,
+              "old_hex": "0x38",
+              "new_hex": "0x58",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008a2b",
+              "offset": 5034604,
+              "old": 104,
+              "new": 126,
+              "old_hex": "0x68",
+              "new_hex": "0x7e",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 6662144,
+          "uint32_new": 0,
+          "int32_old": 6662144,
+          "int32_new": 0,
+          "float32_old": 9.335652156310794e-39,
+          "float32_new": 0.0,
+          "uint64_old": 1196809823561728,
+          "uint64_new": 0,
+          "double_old": 5.913026184271735e-309,
+          "double_new": 0.0
+        },
+        {
+          "cluster_addr": "0x440e6008f99",
+          "cluster_size": 18,
+          "num_bytes_changed": 4,
+          "changes": [
+            {
+              "addr": "0x440e6008f99",
+              "offset": 5035994,
+              "old": 48,
+              "new": 224,
+              "old_hex": "0x30",
+              "new_hex": "0xe0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008f9a",
+              "offset": 5035995,
+              "old": 207,
+              "new": 201,
+              "old_hex": "0xcf",
+              "new_hex": "0xc9",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008fa9",
+              "offset": 5036010,
+              "old": 224,
+              "new": 96,
+              "old_hex": "0xe0",
+              "new_hex": "0x60",
+              "type": "bitfield_flip_bit7"
+            },
+            {
+              "addr": "0x440e6008faa",
+              "offset": 5036011,
+              "old": 201,
+              "new": 204,
+              "old_hex": "0xc9",
+              "new_hex": "0xcc",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 3476029440,
+          "uint32_new": 3386900480,
+          "int32_old": -818937856,
+          "int32_new": -908066816,
+          "float32_old": -2952790016.0,
+          "float32_new": -1835008.0,
+          "uint64_old": 1197264264495104,
+          "uint64_new": 1197264175366144,
+          "double_old": 5.915271420804186e-309,
+          "double_new": 5.915270980448614e-309
+        },
+        {
+          "cluster_addr": "0x440e6008fc0",
+          "cluster_size": 10,
+          "num_bytes_changed": 5,
+          "changes": [
+            {
+              "addr": "0x440e6008fc0",
+              "offset": 5036033,
+              "old": 40,
+              "new": 216,
+              "old_hex": "0x28",
+              "new_hex": "0xd8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008fc1",
+              "offset": 5036034,
+              "old": 49,
+              "new": 88,
+              "old_hex": "0x31",
+              "new_hex": "0x58",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008fc3",
+              "offset": 5036036,
+              "old": 104,
+              "new": 126,
+              "old_hex": "0x68",
+              "new_hex": "0x7e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008fc8",
+              "offset": 5036041,
+              "old": 216,
+              "new": 168,
+              "old_hex": "0xd8",
+              "new_hex": "0xa8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6008fc9",
+              "offset": 5036042,
+              "old": 88,
+              "new": 101,
+              "old_hex": "0x58",
+              "new_hex": "0x65",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 3221504,
+          "uint32_new": 5822464,
+          "int32_old": 3221504,
+          "int32_new": 5822464,
+          "float32_old": 4.5142886080162555e-39,
+          "float32_new": 8.159009861786532e-39,
+          "uint64_old": 1196715330840576,
+          "uint64_new": 1196809822722048,
+          "double_old": 5.9125593281987e-309,
+          "double_new": 5.913026180123164e-309
+        },
+        {
+          "cluster_addr": "0x440e6009629",
+          "cluster_size": 17,
+          "num_bytes_changed": 7,
+          "changes": [
+            {
+              "addr": "0x440e6009629",
+              "offset": 5037674,
+              "old": 0,
+              "new": 176,
+              "old_hex": "0x00",
+              "new_hex": "0xb0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600962a",
+              "offset": 5037675,
+              "old": 0,
+              "new": 221,
+              "old_hex": "0x00",
+              "new_hex": "0xdd",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600962b",
+              "offset": 5037676,
+              "old": 0,
+              "new": 231,
+              "old_hex": "0x00",
+              "new_hex": "0xe7",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600962c",
+              "offset": 5037677,
+              "old": 0,
+              "new": 64,
+              "old_hex": "0x00",
+              "new_hex": "0x40",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e600962d",
+              "offset": 5037678,
+              "old": 0,
+              "new": 4,
+              "old_hex": "0x00",
+              "new_hex": "0x04",
+              "type": "bitfield_flip_bit2"
+            },
+            {
+              "addr": "0x440e6009630",
+              "offset": 5037681,
+              "old": 6,
+              "new": 13,
+              "old_hex": "0x06",
+              "new_hex": "0x0d",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009639",
+              "offset": 5037690,
+              "old": 112,
+              "new": 224,
+              "old_hex": "0x70",
+              "new_hex": "0xe0",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 0,
+          "uint32_new": 3719299072,
+          "int32_old": 0,
+          "int32_new": -575668224,
+          "float32_old": 0.0,
+          "float32_new": -1.5852670688344146e+18,
+          "uint64_old": 0,
+          "uint64_new": 1197264507764736,
+          "double_old": 0.0,
+          "double_new": 5.915272622715864e-309
+        },
+        {
+          "cluster_addr": "0x440e6009650",
+          "cluster_size": 10,
+          "num_bytes_changed": 4,
+          "changes": [
+            {
+              "addr": "0x440e6009650",
+              "offset": 5037713,
+              "old": 40,
+              "new": 200,
+              "old_hex": "0x28",
+              "new_hex": "0xc8",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009651",
+              "offset": 5037714,
+              "old": 24,
+              "new": 94,
+              "old_hex": "0x18",
+              "new_hex": "0x5e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009653",
+              "offset": 5037716,
+              "old": 74,
+              "new": 118,
+              "old_hex": "0x4a",
+              "new_hex": "0x76",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009659",
+              "offset": 5037722,
+              "old": 8,
+              "new": 48,
+              "old_hex": "0x08",
+              "new_hex": "0x30",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 1583104,
+          "uint32_new": 6211584,
+          "int32_old": 1583104,
+          "int32_new": 6211584,
+          "float32_old": 2.2184012040664752e-39,
+          "float32_new": 8.704283120224605e-39,
+          "uint64_old": 1197685991811072,
+          "uint64_new": 1197874975000576,
+          "double_old": 5.91735503059151e-309,
+          "double_new": 5.918288731607266e-309
+        },
+        {
+          "cluster_addr": "0x440e6009770",
+          "cluster_size": 10,
+          "num_bytes_changed": 2,
+          "changes": [
+            {
+              "addr": "0x440e6009770",
+              "offset": 5038001,
+              "old": 7,
+              "new": 6,
+              "old_hex": "0x07",
+              "new_hex": "0x06",
+              "type": "counter_decrement"
+            },
+            {
+              "addr": "0x440e6009779",
+              "offset": 5038010,
+              "old": 200,
+              "new": 140,
+              "old_hex": "0xc8",
+              "new_hex": "0x8c",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 1792,
+          "uint32_new": 1536,
+          "int32_old": 1792,
+          "int32_new": 1536,
+          "float32_old": 2.5111268480700722e-42,
+          "float32_new": 2.152394441202919e-42,
+          "uint64_old": 5629499534214912,
+          "uint64_new": 5629499534214656,
+          "double_old": 2.781342323134887e-308,
+          "double_new": 2.7813423231347606e-308
+        },
+        {
+          "cluster_addr": "0x440e6009790",
+          "cluster_size": 13,
+          "num_bytes_changed": 8,
+          "changes": [
+            {
+              "addr": "0x440e6009790",
+              "offset": 5038033,
+              "old": 104,
+              "new": 24,
+              "old_hex": "0x68",
+              "new_hex": "0x18",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009791",
+              "offset": 5038034,
+              "old": 85,
+              "new": 160,
+              "old_hex": "0x55",
+              "new_hex": "0xa0",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009793",
+              "offset": 5038036,
+              "old": 128,
+              "new": 70,
+              "old_hex": "0x80",
+              "new_hex": "0x46",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009794",
+              "offset": 5038037,
+              "old": 64,
+              "new": 65,
+              "old_hex": "0x40",
+              "new_hex": "0x41",
+              "type": "counter_increment"
+            },
+            {
+              "addr": "0x440e6009798",
+              "offset": 5038041,
+              "old": 88,
+              "new": 104,
+              "old_hex": "0x58",
+              "new_hex": "0x68",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009799",
+              "offset": 5038042,
+              "old": 51,
+              "new": 85,
+              "old_hex": "0x33",
+              "new_hex": "0x55",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600979b",
+              "offset": 5038044,
+              "old": 32,
+              "new": 128,
+              "old_hex": "0x20",
+              "new_hex": "0x80",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e600979c",
+              "offset": 5038045,
+              "old": 65,
+              "new": 64,
+              "old_hex": "0x41",
+              "new_hex": "0x40",
+              "type": "counter_decrement"
+            }
+          ],
+          "uint32_old": 5597184,
+          "uint32_new": 10491904,
+          "int32_old": 5597184,
+          "int32_new": 10491904,
+          "float32_old": 7.843325343743437e-39,
+          "float32_new": 1.4702288963043406e-38,
+          "uint64_old": 1196818412431360,
+          "uint64_new": 1197668820850688,
+          "double_old": 5.913068618925953e-309,
+          "double_new": 5.917270194775194e-309
+        },
+        {
+          "cluster_addr": "0x440e6009c69",
+          "cluster_size": 18,
+          "num_bytes_changed": 3,
+          "changes": [
+            {
+              "addr": "0x440e6009c69",
+              "offset": 5039274,
+              "old": 240,
+              "new": 96,
+              "old_hex": "0xf0",
+              "new_hex": "0x60",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009c6a",
+              "offset": 5039275,
+              "old": 246,
+              "new": 245,
+              "old_hex": "0xf6",
+              "new_hex": "0xf5",
+              "type": "counter_decrement"
+            },
+            {
+              "addr": "0x440e6009c7a",
+              "offset": 5039291,
+              "old": 247,
+              "new": 242,
+              "old_hex": "0xf7",
+              "new_hex": "0xf2",
+              "type": "value_change"
+            }
+          ],
+          "uint32_old": 4142923776,
+          "uint32_new": 4116709376,
+          "int32_old": -152043520,
+          "int32_new": -178257920,
+          "float32_old": -2.4338891524382005e+33,
+          "float32_new": -2.839537344511234e+32,
+          "uint64_old": 1197264931389440,
+          "uint64_new": 1197264905175040,
+          "double_old": 5.915274715699994e-309,
+          "double_new": 5.91527458618365e-309
+        },
+        {
+          "cluster_addr": "0x440e6009c90",
+          "cluster_size": 13,
+          "num_bytes_changed": 8,
+          "changes": [
+            {
+              "addr": "0x440e6009c90",
+              "offset": 5039313,
+              "old": 88,
+              "new": 24,
+              "old_hex": "0x58",
+              "new_hex": "0x18",
+              "type": "bitfield_flip_bit6"
+            },
+            {
+              "addr": "0x440e6009c91",
+              "offset": 5039314,
+              "old": 71,
+              "new": 30,
+              "old_hex": "0x47",
+              "new_hex": "0x1e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009c93",
+              "offset": 5039316,
+              "old": 122,
+              "new": 158,
+              "old_hex": "0x7a",
+              "new_hex": "0x9e",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009c94",
+              "offset": 5039317,
+              "old": 64,
+              "new": 65,
+              "old_hex": "0x40",
+              "new_hex": "0x41",
+              "type": "counter_increment"
+            },
+            {
+              "addr": "0x440e6009c98",
+              "offset": 5039321,
+              "old": 216,
+              "new": 88,
+              "old_hex": "0xd8",
+              "new_hex": "0x58",
+              "type": "bitfield_flip_bit7"
+            },
+            {
+              "addr": "0x440e6009c99",
+              "offset": 5039322,
+              "old": 78,
+              "new": 71,
+              "old_hex": "0x4e",
+              "new_hex": "0x47",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009c9b",
+              "offset": 5039324,
+              "old": 74,
+              "new": 122,
+              "old_hex": "0x4a",
+              "new_hex": "0x7a",
+              "type": "value_change"
+            },
+            {
+              "addr": "0x440e6009c9c",
+              "offset": 5039325,
+              "old": 65,
+              "new": 64,
+              "old_hex": "0x41",
+              "new_hex": "0x40",
+              "type": "counter_decrement"
+            }
+          ],
+          "uint32_old": 4675584,
+          "uint32_new": 1972224,
+          "int32_old": 4675584,
+          "int32_new": 1972224,
+          "float32_old": 6.551888679021685e-39,
+          "float32_new": 2.763674462504548e-39,
+          "uint64_old": 1196792641705984,
+          "uint64_new": 1198046769453056,
+          "double_old": 5.912941294625186e-309,
+          "double_new": 5.91913750897843e-309
+        }
+      ]
+    },
+    "unlocked": {
+      "total_changes": 0,
+      "details": []
+    },
+    "explored": {
+      "total_changes": 0,
+      "details": []
+    },
+    "completion": {
+      "total_changes": 0,
+      "details": []
+    }
+  }
+}

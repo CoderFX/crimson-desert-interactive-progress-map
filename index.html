@@ -181,6 +181,7 @@
   <script src="data/maps.js"></script>
   <script src="data/markers/pywel.js"></script>
   <script src="data/regions.js"></script>
+  <script src="lib/icons/icons-map.js"></script>
 
   <!-- Progress Storage -->
   <script>
@@ -378,11 +379,25 @@
       return code ? String.fromCharCode(parseInt(code, 16)) : '?';
     }
 
-    function createPinHtml(color, iconChar, isFound) {
+    function getIconPng(categoryId) {
+      var info = categoryMap[categoryId];
+      if (!info) return null;
+      var iconName = info.category.icon;
+      return (typeof METAFORGE_ICON_MAP !== 'undefined' && METAFORGE_ICON_MAP[iconName]) || null;
+    }
+
+    function createPinHtml(color, categoryId, isFound) {
       var c = color;
+      var png = getIconPng(categoryId);
+      var iconContent;
+      if (png) {
+        iconContent = '<img src="lib/icons/' + png + '" style="width:14px;height:14px;filter:brightness(10);" onerror="this.style.display=\'none\'">';
+      } else {
+        iconContent = getIconChar(categoryId);
+      }
       return '<div class="cdm-pin' + (isFound ? ' cdm-pin-found' : '') + '">' +
         '<div class="cdm-pin-bg"><svg viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="' + c + '"/></svg></div>' +
-        '<div class="cdm-pin-icon">' + iconChar + '</div></div>';
+        '<div class="cdm-pin-icon">' + iconContent + '</div></div>';
     }
 
     // --- Simple markdown to safe HTML ---
@@ -483,10 +498,18 @@
 
       var catLabel = document.createElement('div');
       catLabel.style.cssText = 'font-size:11px;color:#aaa;margin:2px 0 4px;display:flex;align-items:center;gap:4px;';
-      var popupIcon = document.createElement('span');
-      popupIcon.style.cssText = 'font-family:cdm-icons;font-size:13px;color:' + getMarkerColor(marker.categoryId) + ';';
-      popupIcon.textContent = getIconChar(marker.categoryId);
-      catLabel.appendChild(popupIcon);
+      var popupPng = getIconPng(marker.categoryId);
+      if (popupPng) {
+        var popupImg = document.createElement('img');
+        popupImg.src = 'lib/icons/' + popupPng;
+        popupImg.style.cssText = 'width:16px;height:16px;';
+        catLabel.appendChild(popupImg);
+      } else {
+        var popupIcon = document.createElement('span');
+        popupIcon.style.cssText = 'font-family:cdm-icons;font-size:13px;color:' + getMarkerColor(marker.categoryId) + ';';
+        popupIcon.textContent = getIconChar(marker.categoryId);
+        catLabel.appendChild(popupIcon);
+      }
       var catText = document.createElement('span');
       catText.textContent = catTitle;
       catLabel.appendChild(catText);
@@ -605,10 +628,9 @@
     // --- Create pin divIcon ---
     function createPinIcon(categoryId, isFound) {
       var color = getMarkerColor(categoryId);
-      var iconChar = getIconChar(categoryId);
       return L.divIcon({
         className: '',
-        html: createPinHtml(color, iconChar, isFound),
+        html: createPinHtml(color, categoryId, isFound),
         iconSize: [24, 32],
         iconAnchor: [12, 32],
         popupAnchor: [0, -32]
@@ -750,10 +772,22 @@
           var iconSpan = document.createElement('span');
           iconSpan.className = 'category-icon';
           iconSpan.style.background = group.color;
-          iconSpan.style.fontFamily = "'cdm-icons'";
-          iconSpan.style.fontSize = '11px';
-          var catCode = ICON_MAP[cat.icon];
-          iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : cat.title.charAt(0);
+          iconSpan.style.display = 'flex';
+          iconSpan.style.alignItems = 'center';
+          iconSpan.style.justifyContent = 'center';
+          var pngFile = (typeof METAFORGE_ICON_MAP !== 'undefined') ? METAFORGE_ICON_MAP[cat.icon] : null;
+          if (pngFile) {
+            var iconImg = document.createElement('img');
+            iconImg.src = 'lib/icons/' + pngFile;
+            iconImg.style.cssText = 'width:13px;height:13px;filter:brightness(10);';
+            iconImg.onerror = function() { iconSpan.textContent = cat.title.charAt(0); };
+            iconSpan.appendChild(iconImg);
+          } else {
+            iconSpan.style.fontFamily = "'cdm-icons'";
+            iconSpan.style.fontSize = '11px';
+            var catCode = ICON_MAP[cat.icon];
+            iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : cat.title.charAt(0);
+          }
 
           var titleSpan = document.createElement('span');
           titleSpan.className = 'category-title';
@@ -916,10 +950,22 @@
         var iconSpan = document.createElement('span');
         iconSpan.className = 'category-icon';
         iconSpan.style.background = info.group.color;
-        iconSpan.style.fontFamily = "'cdm-icons'";
-        iconSpan.style.fontSize = '11px';
-        var catCode = ICON_MAP[info.category.icon];
-        iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : info.category.title.charAt(0);
+        iconSpan.style.display = 'flex';
+        iconSpan.style.alignItems = 'center';
+        iconSpan.style.justifyContent = 'center';
+        var favPng = (typeof METAFORGE_ICON_MAP !== 'undefined') ? METAFORGE_ICON_MAP[info.category.icon] : null;
+        if (favPng) {
+          var favImg = document.createElement('img');
+          favImg.src = 'lib/icons/' + favPng;
+          favImg.style.cssText = 'width:13px;height:13px;filter:brightness(10);';
+          favImg.onerror = function() { iconSpan.textContent = info.category.title.charAt(0); };
+          iconSpan.appendChild(favImg);
+        } else {
+          iconSpan.style.fontFamily = "'cdm-icons'";
+          iconSpan.style.fontSize = '11px';
+          var catCode = ICON_MAP[info.category.icon];
+          iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : info.category.title.charAt(0);
+        }
 
         var titleEl = document.createElement('span');
         titleEl.className = 'category-title';

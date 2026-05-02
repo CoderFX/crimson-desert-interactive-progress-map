@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "address": "0x77d651e",
+    "region_base": "0x76f0000",
+    "offset_in_region": 943390,
+    "encoding": "utf8",
+    "region_size": 1798144,
+    "protect": "0x4"
+  },
+  "sealed_artifact": {
+    "address": "0x7977baa",
+    "region_base": "0x78a8000",
+    "offset_in_region": 850858,
+    "encoding": "utf8",
+    "region_size": 1183744,
+    "protect": "0x4"
+  },
+  "greymane": {
+    "address": "0x7977ef0",
+    "region_base": "0x78a8000",
+    "offset_in_region": 851696,
+    "encoding": "utf8",
+    "region_size": 1183744,
+    "protect": "0x4"
+  },
+  "hernandcastle": {
+    "address": "0x7977c52",
+    "region_base": "0x78a8000",
+    "offset_in_region": 851026,
+    "encoding": "utf8",
+    "region_size": 1183744,
+    "protect": "0x4"
+  },
+  "pickup": {
+    "address": "0xf01f036",
+    "region_base": "0xef90000",
+    "offset_in_region": 585782,
+    "encoding": "utf16",
+    "region_size": 7098368,
+    "protect": "0x2"
+  },
+  "Stronghold": {
+    "address": "0x10c7b96c",
+    "region_base": "0x10b2f000",
+    "offset_in_region": 1362284,
+    "encoding": "utf16",
+    "region_size": 2580480,
+    "protect": "0x4"
+  },
+  "quest_complete": {
+    "address": "0x144959e86",
+    "region_base": "0x1445b1000",
+    "offset_in_region": 3837574,
+    "encoding": "utf8",
+    "region_size": 21241856,
+    "protect": "0x2"
+  }
+}
