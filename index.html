@@ -1230,13 +1230,18 @@
         countdown.style.cssText = 'font-family:monospace;font-weight:bold;font-size:13px;';
         chip.appendChild(countdown);
 
-        // Right-click to adjust (for save reloads)
-        chip.title = 'Right-click to adjust time (e.g. after reloading a save)';
+        // Click to adjust time
+        chip.title = 'Click to adjust time';
         chip.style.cursor = 'pointer';
-        chip.addEventListener('contextmenu', function(e) {
-          e.preventDefault();
-          var adj = prompt('Adjust timer for "' + (timer.label || 'Investment') + '":\n\nEnter new in-game time remaining (e.g. 1d 12h, 8h, 30m)\nor click Cancel to keep current');
+        chip.addEventListener('click', function(e) {
+          if (e.target === delBtn) return;
+          var adj = prompt('Adjust "' + (timer.label || 'Investment') + '":\n\nEnter new in-game time remaining (e.g. 1d 12h, 8h, 30m)\nor type "rename" to rename\nor click Cancel to keep current');
           if (!adj) return;
+          if (adj.trim().toLowerCase() === 'rename') {
+            var newName = prompt('New name:', timer.label);
+            if (newName) { timer.label = newName; saveBankTimers(); renderBankTimers(); }
+            return;
+          }
           var gm = 0;
           var dm = adj.match(/(\d+)\s*d/i); if (dm) gm += parseInt(dm[1]) * 24 * 60;
           var hm = adj.match(/(\d+)\s*h/i); if (hm) gm += parseInt(hm[1]) * 60;
