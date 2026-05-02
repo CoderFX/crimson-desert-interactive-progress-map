@@ -1247,11 +1247,13 @@
           el.textContent = 'READY!';
           el.style.color = '#27ae60';
         } else {
-          var days = Math.floor(remaining / 86400000);
-          var hrs = Math.floor((remaining % 86400000) / 3600000);
+          // Real time remaining
+          var hrs = Math.floor(remaining / 3600000);
           var mins = Math.floor((remaining % 3600000) / 60000);
           var secs = Math.floor((remaining % 60000) / 1000);
-          el.textContent = (days > 0 ? days + 'd ' : '') + (hrs > 0 ? hrs + 'h ' : '') + mins + 'm ' + secs + 's';
+          var realStr = (hrs > 0 ? hrs + 'h ' : '') + mins + 'm ' + secs + 's';
+          el.textContent = realStr;
+          el.title = 'Real time: ' + realStr + '\nGame time: ' + Math.ceil(remaining / 300000) + 'h left';
           el.style.color = remaining < 600000 ? '#f39c12' : '#5A8EB2';
         }
       });
@@ -1260,16 +1262,18 @@
     document.getElementById('btn-add-timer').addEventListener('click', function() {
       var label = prompt('Investment name (e.g. "Gold Bars - Hernand Bank"):');
       if (!label) return;
-      var hoursStr = prompt('How many hours until return?\n(e.g. 2 for 2 hours, 0.5 for 30 min)');
-      if (!hoursStr) return;
-      var hours = parseFloat(hoursStr);
-      if (isNaN(hours) || hours <= 0) { alert('Invalid hours'); return; }
+      var gameHoursStr = prompt('How many IN-GAME hours until return?\n(e.g. 24 for 1 game day, 48 for 2 game days)\n\n1 game hour = 5 real minutes\n24 game hours = 2 real hours');
+      if (!gameHoursStr) return;
+      var gameHours = parseFloat(gameHoursStr);
+      if (isNaN(gameHours) || gameHours <= 0) { alert('Invalid hours'); return; }
+      // 1 game hour = 5 real minutes = 300000 ms
+      var realMs = gameHours * 300000;
 
       bankTimers.push({
         label: label,
         startTime: Date.now(),
-        endTime: Date.now() + hours * 3600000,
-        hours: hours
+        endTime: Date.now() + realMs,
+        gameHours: gameHours
       });
       saveBankTimers();
       renderBankTimers();
