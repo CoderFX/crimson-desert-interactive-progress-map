@@ -1262,12 +1262,25 @@
     document.getElementById('btn-add-timer').addEventListener('click', function() {
       var label = prompt('Investment name (e.g. "Gold Bars - Hernand Bank"):');
       if (!label) return;
-      var gameHoursStr = prompt('How many IN-GAME hours until return?\n(e.g. 24 for 1 game day, 48 for 2 game days)\n\n1 game hour = 5 real minutes\n24 game hours = 2 real hours');
-      if (!gameHoursStr) return;
-      var gameHours = parseFloat(gameHoursStr);
-      if (isNaN(gameHours) || gameHours <= 0) { alert('Invalid hours'); return; }
-      // 1 game hour = 5 real minutes = 300000 ms
-      var realMs = gameHours * 300000;
+      var timeStr = prompt('In-game time until return:\n\nExamples: 1d 16h, 2d, 12h, 30m\n(1 game hour = 5 real minutes)');
+      if (!timeStr) return;
+      // Parse days, hours, minutes
+      var gameMinutes = 0;
+      var dMatch = timeStr.match(/(\d+)\s*d/i);
+      var hMatch = timeStr.match(/(\d+)\s*h/i);
+      var mMatch = timeStr.match(/(\d+)\s*m/i);
+      if (dMatch) gameMinutes += parseInt(dMatch[1]) * 24 * 60;
+      if (hMatch) gameMinutes += parseInt(hMatch[1]) * 60;
+      if (mMatch) gameMinutes += parseInt(mMatch[1]);
+      // If just a plain number, treat as hours
+      if (!dMatch && !hMatch && !mMatch) {
+        var plain = parseFloat(timeStr);
+        if (!isNaN(plain)) gameMinutes = plain * 60;
+      }
+      if (gameMinutes <= 0) { alert('Could not parse time. Use format like: 1d 16h'); return; }
+      var gameHours = gameMinutes / 60;
+      // 1 game minute = 5 real seconds = 5000 ms
+      var realMs = gameMinutes * 5000;
 
       bankTimers.push({
         label: label,
