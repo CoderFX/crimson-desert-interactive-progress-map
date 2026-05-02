@@ -157,16 +157,7 @@
         </label>
       </div>
     </div>
-    <div id="favorites-bar" style="display:none;border-bottom:1px solid #333;padding:6px 12px;">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <span style="color:#f1c40f;font-size:12px;">&#9733;</span>
-        <span style="font-size:12px;font-weight:bold;flex:1;">Favorites</span>
-        <button id="btn-fav-show" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Show Only</button>
-        <button id="btn-fav-hide" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Hide Rest</button>
-        <button id="btn-fav-reset" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Reset</button>
-      </div>
-      <div id="favorites-list" style="display:flex;flex-wrap:wrap;gap:3px;"></div>
-    </div>
+    <div id="favorites-group"></div>
     <div id="search-results" style="display:none;max-height:200px;overflow-y:auto;border-bottom:1px solid #333;"></div>
     <div id="sidebar-categories"></div>
     <div id="sidebar-footer">
@@ -849,72 +840,135 @@
       }
     }
 
-    // --- Favorites Bar ---
+    // --- Favorites Group (rendered like a normal category group at top of sidebar) ---
     function renderFavoritesBar() {
+      var container = document.getElementById('favorites-group');
+      container.innerHTML = '';
       var favKeys = Object.keys(favorites);
-      var bar = document.getElementById('favorites-bar');
-      var list = document.getElementById('favorites-list');
-      if (favKeys.length === 0) {
-        bar.style.display = 'none';
-        list.innerHTML = '';
-        return;
-      }
-      bar.style.display = 'block';
-      list.innerHTML = '';
+      if (favKeys.length === 0) return;
+
+      // Group header
+      var header = document.createElement('div');
+      header.className = 'group-header';
+
+      var favGroupCheckbox = document.createElement('input');
+      favGroupCheckbox.type = 'checkbox';
+      favGroupCheckbox.className = 'category-checkbox';
+      var allVisible = favKeys.every(function(k) { return categoryVisibility[k] !== false; });
+      var anyVisible = favKeys.some(function(k) { return categoryVisibility[k] !== false; });
+      favGroupCheckbox.checked = allVisible;
+      favGroupCheckbox.indeterminate = !allVisible && anyVisible;
+      favGroupCheckbox.addEventListener('click', function(e) { e.stopPropagation(); });
+      favGroupCheckbox.addEventListener('change', function() {
+        favKeys.forEach(function(k) { categoryVisibility[k] = favGroupCheckbox.checked; });
+        saveVisibility();
+        applyFilters();
+        renderFavoritesBar();
+        renderSidebar();
+      });
+
+      var arrow = document.createElement('span');
+      arrow.className = 'group-arrow';
+      arrow.textContent = '\u25BC';
+
+      var starIcon = document.createElement('span');
+      starIcon.style.cssText = 'color:#f1c40f;font-size:12px;flex-shrink:0;';
+      starIcon.textContent = '\u2605';
+
+      var titleSpan = document.createElement('span');
+      titleSpan.textContent = 'Favorites';
+
+      header.appendChild(favGroupCheckbox);
+      header.appendChild(arrow);
+      header.appendChild(starIcon);
+      header.appendChild(titleSpan);
+      container.appendChild(header);
+
+      // Category rows
+      var catsDiv = document.createElement('div');
+      catsDiv.className = 'group-categories';
+
       favKeys.forEach(function(catId) {
         var info = categoryMap[catId];
         if (!info) return;
-        var chip = document.createElement('span');
-        var isVisible = categoryVisibility[catId] !== false;
-        chip.style.cssText = 'display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;cursor:pointer;border:1px solid ' + info.group.color + ';' +
-          (isVisible ? 'background:' + info.group.color + ';color:#fff;' : 'background:transparent;color:#aaa;');
-        var catCode = ICON_MAP[info.category.icon];
+
+        var row = document.createElement('div');
+        row.className = 'category-row';
+
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'category-checkbox';
+        checkbox.checked = categoryVisibility[catId] !== false;
+        checkbox.addEventListener('change', function() {
+          categoryVisibility[catId] = checkbox.checked;
+          saveVisibility();
+          applyFilters();
+          // Update group checkbox
+          var allOn = favKeys.every(function(k) { return categoryVisibility[k] !== false; });
+          var anyOn = favKeys.some(function(k) { return categoryVisibility[k] !== false; });
+          favGroupCheckbox.checked = allOn;
+          favGroupCheckbox.indeterminate = !allOn && anyOn;
+          renderSidebar();
+        });
+
         var iconSpan = document.createElement('span');
+        iconSpan.className = 'category-icon';
+        iconSpan.style.background = info.group.color;
         iconSpan.style.fontFamily = "'cdm-icons'";
-        iconSpan.style.fontSize = '10px';
+        iconSpan.style.fontSize = '11px';
+        var catCode = ICON_MAP[info.category.icon];
         iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : info.category.title.charAt(0);
-        chip.appendChild(iconSpan);
-        var label = document.createElement('span');
-        label.textContent = info.category.title;
-        chip.appendChild(label);
-        chip.addEventListener('click', function() {
-          categoryVisibility[catId] = !isVisible;
+
+        var titleEl = document.createElement('span');
+        titleEl.className = 'category-title';
+        titleEl.textContent = info.category.title;
+
+        var counts = Progress.getFoundCount(currentMapId, catId, currentMarkerData.markers);
+        var countSpan = document.createElement('span');
+        countSpan.className = 'category-count';
+        countSpan.textContent = counts.found + '/' + counts.total;
+
+        // Unfavorite star
+        var star = document.createElement('span');
+        star.style.cssText = 'cursor:pointer;font-size:12px;flex-shrink:0;color:#f1c40f;';
+        star.textContent = '\u2605';
+        star.title = 'Remove from favorites';
+        star.addEventListener('click', function(e) {
+          e.stopPropagation();
+          delete favorites[catId];
+          saveFavorites();
+          renderFavoritesBar();
+          renderSidebar();
+        });
+
+        row.appendChild(checkbox);
+        row.appendChild(iconSpan);
+        row.appendChild(titleEl);
+        row.appendChild(countSpan);
+        row.appendChild(star);
+
+        // Right-click to show only this
+        row.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
+          categoryVisibility[catId] = true;
           saveVisibility();
           applyFilters();
           renderFavoritesBar();
           renderSidebar();
         });
-        list.appendChild(chip);
+
+        catsDiv.appendChild(row);
+      });
+
+      container.appendChild(catsDiv);
+
+      // Collapse toggle
+      header.addEventListener('click', function() {
+        var isHidden = catsDiv.classList.toggle('hidden');
+        arrow.classList.toggle('collapsed', isHidden);
       });
     }
-
-    document.getElementById('btn-fav-show').addEventListener('click', function() {
-      // Hide all, show only favorites
-      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
-      Object.keys(favorites).forEach(function(k) { categoryVisibility[k] = true; });
-      saveVisibility();
-      applyFilters();
-      renderFavoritesBar();
-      renderSidebar();
-    });
-
-    document.getElementById('btn-fav-hide').addEventListener('click', function() {
-      // Hide everything except favorites
-      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = !!favorites[k]; });
-      saveVisibility();
-      applyFilters();
-      renderFavoritesBar();
-      renderSidebar();
-    });
-
-    document.getElementById('btn-fav-reset').addEventListener('click', function() {
-      // Show all categories
-      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = true; });
-      saveVisibility();
-      applyFilters();
-      renderFavoritesBar();
-      renderSidebar();
-    });
 
     // --- Update progress display ---
     function updateProgressDisplay() {
