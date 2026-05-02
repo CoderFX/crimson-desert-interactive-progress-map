@@ -18,6 +18,8 @@
     .cdm-pin-bg svg { width:24px; height:32px; display:block; }
     .cdm-pin-icon { position:absolute; top:3px; left:0; width:24px; height:20px; text-align:center; line-height:20px; font-family:'cdm-icons'!important; font-size:13px; color:#fff; }
     .cdm-pin-found { opacity:0.35; } /* default, overridden by dynamic style */
+    .cdm-region-tooltip { background: #1a1a2e; color: #fff; border: 1px solid #555; font-size: 13px; font-weight: bold; padding: 4px 10px; border-radius: 4px; }
+    .cdm-region-tooltip::before { border-top-color: #555 !important; }
     #map { position: absolute; top: 44px; left: 280px; right: 0; bottom: 0; background: #16213e; }
 
     /* Top bar */
@@ -182,6 +184,7 @@
   <script src="lib/leaflet.js"></script>
   <script src="data/maps.js"></script>
   <script src="data/markers/pywel.js"></script>
+  <script src="data/regions.js"></script>
 
   <!-- Progress Storage -->
   <script>
@@ -415,18 +418,41 @@
       noWrap: true
     }).addTo(map);
 
-    // Faction overlay layer
-    var factionLayer = L.tileLayer('https://tiles.mapgenie.io/games/crimson-desert/oats/faction-v3/{z}/{y}/{x}.jpg', {
+    // Faction overlay layer + region polygons with hover
+    var factionTiles = L.tileLayer('https://tiles.mapgenie.io/games/crimson-desert/oats/faction-v3/{z}/{y}/{x}.jpg', {
       minZoom: 8, maxZoom: 19, noWrap: true, opacity: 0.7
     });
+
+    var regionColors = { 'Hernand': '#c0392b', 'Demeniss': '#2980b9', 'Pailune': '#27ae60', 'Delesyia': '#f39c12', 'Crimson Desert': '#e74c3c', 'Abyss': '#8e44ad' };
+    var regionPolygons = L.layerGroup();
+    if (window.CDM_REGIONS) {
+      window.CDM_REGIONS.forEach(function(region) {
+        // MapGenie coordinates are [lng, lat], Leaflet needs [lat, lng]
+        var latlngs = region.coordinates.map(function(c) { return [c[1], c[0]]; });
+        var color = regionColors[region.title] || '#888';
+        var poly = L.polygon(latlngs, {
+          color: color, weight: 2, fillColor: color, fillOpacity: 0.08,
+          interactive: true
+        });
+        poly.bindTooltip(region.title, {
+          sticky: true, direction: 'top', className: 'cdm-region-tooltip'
+        });
+        poly.on('mouseover', function() { poly.setStyle({ fillOpacity: 0.2, weight: 3 }); });
+        poly.on('mouseout', function() { poly.setStyle({ fillOpacity: 0.08, weight: 2 }); });
+        regionPolygons.addLayer(poly);
+      });
+    }
+
     var factionVisible = false;
     document.getElementById('btn-faction-layer').addEventListener('click', function() {
       factionVisible = !factionVisible;
       if (factionVisible) {
-        factionLayer.addTo(map);
+        factionTiles.addTo(map);
+        regionPolygons.addTo(map);
         this.style.background = '#c0392b';
       } else {
-        map.removeLayer(factionLayer);
+        map.removeLayer(factionTiles);
+        map.removeLayer(regionPolygons);
         this.style.background = '';
       }
     });
