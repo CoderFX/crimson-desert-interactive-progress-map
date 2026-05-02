@@ -18,7 +18,7 @@
     .cdm-pin-bg svg { width:24px; height:32px; display:block; }
     .cdm-pin-icon { position:absolute; top:3px; left:0; width:24px; height:20px; text-align:center; line-height:20px; font-family:'cdm-icons'!important; font-size:13px; color:#fff; }
     .cdm-pin-found { opacity:0.35; } /* default, overridden by dynamic style */
-    .cdm-region-tooltip { background: #1a1a2e; color: #fff; border: 1px solid #555; font-size: 13px; font-weight: bold; padding: 4px 10px; border-radius: 4px; }
+    .cdm-region-tooltip { background: #1a1a2e; color: #fff; border: 1px solid #555; font-size: 13px; padding: 6px 12px; border-radius: 4px; max-width: 220px; }
     .cdm-region-tooltip::before { border-top-color: #555 !important; }
     #map { position: absolute; top: 44px; left: 280px; right: 0; bottom: 0; background: #16213e; }
 
@@ -424,6 +424,14 @@
     });
 
     var regionColors = { 'Hernand': '#c0392b', 'Demeniss': '#2980b9', 'Pailune': '#27ae60', 'Delesyia': '#f39c12', 'Crimson Desert': '#e74c3c', 'Abyss': '#8e44ad' };
+    var regionFactions = {
+      'Hernand': ['Greymanes', 'House Alfonso', 'House Celeste', 'House Felix', 'House Grace', 'House Roberts', 'House Serkis', 'Goldleaf Merchant Guild', 'Hernandian Parish of Solumen', 'Wolf Trackers', 'Scholastone Institute', 'Vellua Fishermen\'s Guild', 'St. Halssius\'s House of Healing', 'Beggar\'s Alliance', 'Bleed Bandits', 'Southern Bandits', 'Dancing Catfish Pirates', 'Hornsplitter\'s Guards', 'Pororin Forest Guardians', 'Reed Devil', 'Cassius Morten', 'Fundamentalist Goblins', 'Kharonso Troll Alliance'],
+      'Demeniss': ['House Azerian', 'House Byron', 'House Elemore', 'House Marshell', 'House Thorel', 'House Wells', 'Bastier\'s Inquisitors', 'Silvermoon Trade Collective', 'Tariv Sorcerers'],
+      'Delesyia': ['Marni', 'Marni\'s Tinkertons', 'Cogknights', 'Delesyia National Institute', 'Delesyian Aerial Force', 'Ironwheel of Dewhaven', 'Society of Progress', 'Gearmelt Confectionery', 'Redfox Merchants', 'The Wyvernflames', 'Ironflame Orcs'],
+      'Pailune': ['Knytlingar Clan', 'Stjar Clan', 'Skoghorn Tribe', 'Beighen Tribe', 'Longleaf Tribe', 'Blue Fangs', 'Black Bears', 'Crow Brothers', 'Lonely Jackals', 'Mistwood Hunters', 'Pailune Militia'],
+      'Crimson Desert': ['The Helms', 'Muiquun Outlaws', 'Goldenscale Bandits', 'Sandfang Marauders', 'Savage Fangs', 'The Faceless', 'Arcosa Tribe', 'Dusksong', 'Urdavah', 'Varnia', 'Whitesand Retreat', 'Redwind Merchant Guild', 'Tommaso', 'Lords of Unclaimed Lands', 'Sage of the Desert', 'Bursada Ruins Research Team', 'Giant Yard\'s Research Group'],
+      'Abyss': ['Antumbra Order']
+    };
     var regionPolygons = L.layerGroup();
     if (window.CDM_REGIONS) {
       window.CDM_REGIONS.forEach(function(region) {
@@ -434,7 +442,13 @@
           color: color, weight: 2, fillColor: color, fillOpacity: 0.08,
           interactive: true
         });
-        poly.bindTooltip(region.title, {
+        var factions = regionFactions[region.title] || [];
+        var tipHtml = '<b>' + escapeHtml(region.title) + '</b>';
+        if (factions.length > 0) {
+          tipHtml += '<div style="font-size:11px;color:#aaa;margin-top:4px;max-height:180px;overflow-y:auto;">' +
+            factions.map(function(f) { return escapeHtml(f); }).join('<br>') + '</div>';
+        }
+        poly.bindTooltip(tipHtml, {
           sticky: true, direction: 'top', className: 'cdm-region-tooltip'
         });
         poly.on('mouseover', function() { poly.setStyle({ fillOpacity: 0.2, weight: 3 }); });
