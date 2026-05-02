@@ -1247,10 +1247,11 @@
           el.textContent = 'READY!';
           el.style.color = '#27ae60';
         } else {
-          var hrs = Math.floor(remaining / 3600000);
+          var days = Math.floor(remaining / 86400000);
+          var hrs = Math.floor((remaining % 86400000) / 3600000);
           var mins = Math.floor((remaining % 3600000) / 60000);
           var secs = Math.floor((remaining % 60000) / 1000);
-          el.textContent = (hrs > 0 ? hrs + 'h ' : '') + mins + 'm ' + secs + 's';
+          el.textContent = (days > 0 ? days + 'd ' : '') + (hrs > 0 ? hrs + 'h ' : '') + mins + 'm ' + secs + 's';
           el.style.color = remaining < 600000 ? '#f39c12' : '#5A8EB2';
         }
       });
