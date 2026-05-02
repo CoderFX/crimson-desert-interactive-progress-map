@@ -20,11 +20,11 @@
     .cdm-pin-found { opacity:0.35; } /* default, overridden by dynamic style */
     .cdm-region-tooltip { background: #1a1a2e; color: #fff; border: 1px solid #555; font-size: 13px; padding: 6px 12px; border-radius: 4px; max-width: 220px; }
     .cdm-region-tooltip::before { border-top-color: #555 !important; }
-    #map { position: absolute; top: 72px; left: 280px; right: 0; bottom: 0; background: #16213e; }
+    #map { position: absolute; top: 44px; left: 280px; right: 0; bottom: 0; background: #16213e; }
 
     /* Top bar */
     #topbar {
-      position: absolute; top: 28px; left: 280px; right: 0; height: 44px; z-index: 1000;
+      position: absolute; top: 0; left: 280px; right: 0; height: 44px; z-index: 1000;
       background: #1a1a2e; border-bottom: 1px solid #333; display: flex; align-items: center;
       padding: 0 12px; gap: 12px;
     }
@@ -109,7 +109,6 @@
       #sidebar { transform: translateX(-100%); transition: transform 0.2s; }
       #sidebar.open { transform: translateX(0); }
       #sidebar-toggle { display: block; }
-      #timer-bar { left: 0 !important; }
       #topbar { left: 0 !important; padding-left: 48px; }
       #map { left: 0 !important; }
     }
@@ -118,14 +117,10 @@
 <body>
   <button id="sidebar-toggle">&#9776;</button>
 
-  <div id="timer-bar" style="display:none;position:absolute;top:0;left:280px;right:0;height:28px;z-index:999;background:#12122a;border-bottom:1px solid #333;display:flex;align-items:center;padding:0 12px;gap:8px;overflow-x:auto;">
-    <span style="font-size:11px;color:#888;white-space:nowrap;">🏦 Investments:</span>
-    <div id="bank-timer-list" style="display:flex;gap:10px;flex:1;overflow-x:auto;"></div>
-    <button id="btn-add-timer" style="padding:1px 8px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;white-space:nowrap;">+ Add</button>
-  </div>
   <div id="topbar">
     <span id="topbar-title">Crimson Desert Map</span>
-    <span class="topbar-spacer"></span>
+    <div id="bank-timer-list" style="display:flex;gap:8px;flex:1;overflow-x:auto;padding:0 8px;"></div>
+    <button id="btn-add-timer" class="topbar-btn" title="Add bank investment timer">🏦+</button>
     <button class="topbar-btn" id="btn-faction-layer" title="Toggle faction overlay">Factions</button>
     <button class="topbar-btn" id="btn-add-marker" title="Add custom marker">+ Add</button>
     <button class="topbar-btn" id="btn-tools" title="Tools">&#9881;</button>
@@ -1218,12 +1213,11 @@
     function renderBankTimers() {
       var list = document.getElementById('bank-timer-list');
       list.innerHTML = '';
-      document.getElementById('timer-bar').style.display = bankTimers.length > 0 ? 'flex' : 'none';
       if (bankTimers.length === 0) return;
 
       bankTimers.forEach(function(timer, idx) {
         var chip = document.createElement('div');
-        chip.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap;background:#1e1e3a;border:1px solid #444;border-radius:12px;padding:2px 8px;';
+        chip.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:13px;white-space:nowrap;background:#1e1e3a;border:1px solid #444;border-radius:12px;padding:3px 10px;';
 
         var label = document.createElement('span');
         label.style.cssText = 'color:#aaa;';
@@ -1233,7 +1227,7 @@
         var countdown = document.createElement('span');
         countdown.className = 'bank-timer-countdown';
         countdown.dataset.idx = idx;
-        countdown.style.cssText = 'font-family:monospace;font-weight:bold;';
+        countdown.style.cssText = 'font-family:monospace;font-weight:bold;font-size:13px;';
         chip.appendChild(countdown);
 
         // Right-click to adjust (for save reloads)
@@ -1292,8 +1286,9 @@
           var gDays = Math.floor(gameRemain / 24);
           var gHrs = Math.floor(gameRemain % 24);
           var gameStr = (gDays > 0 ? gDays + 'd ' : '') + gHrs + 'h';
-          el.innerHTML = '<span style="color:#5A8EB2;">' + realStr + '</span> <span style="color:#888;font-size:10px;">(' + gameStr + ' game)</span>';
-          el.style.color = remaining < 600000 ? '#f39c12' : '#5A8EB2';
+          var remMin = remaining / 60000;
+          var timerColor = remMin > 15 ? '#27ae60' : remMin > 10 ? '#f39c12' : '#e74c3c';
+          el.innerHTML = '<span style="color:' + timerColor + ';">' + realStr + '</span> <span style="color:#888;font-size:11px;">(' + gameStr + ')</span>';
           // Beep alerts at 15m, 10m, 5m real time
           var remMin = remaining / 60000;
           if (remMin <= 15 && remMin > 14.9 && !timer._beeped15) { timer._beeped15 = true; playBeep(1); }
