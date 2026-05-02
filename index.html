@@ -157,6 +157,16 @@
         </label>
       </div>
     </div>
+    <div id="favorites-bar" style="display:none;border-bottom:1px solid #333;padding:6px 12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="color:#f1c40f;font-size:12px;">&#9733;</span>
+        <span style="font-size:12px;font-weight:bold;flex:1;">Favorites</span>
+        <button id="btn-fav-show" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Show Only</button>
+        <button id="btn-fav-hide" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Hide Rest</button>
+        <button id="btn-fav-reset" style="padding:2px 6px;background:#2a2a4a;border:1px solid #444;border-radius:3px;color:#e0e0e0;font-size:10px;cursor:pointer;">Reset</button>
+      </div>
+      <div id="favorites-list" style="display:flex;flex-wrap:wrap;gap:3px;"></div>
+    </div>
     <div id="search-results" style="display:none;max-height:200px;overflow-y:auto;border-bottom:1px solid #333;"></div>
     <div id="sidebar-categories"></div>
     <div id="sidebar-footer">
@@ -333,6 +343,14 @@
     }
     function saveVisibility() {
       try { localStorage.setItem(CDM_VIS_KEY, JSON.stringify(categoryVisibility)); } catch(e) {}
+    }
+
+    // --- Favorites ---
+    var CDM_FAV_KEY = 'cdm-favorites';
+    var favorites = {};
+    try { var sf = localStorage.getItem(CDM_FAV_KEY); if (sf) favorites = JSON.parse(sf); } catch(e) {}
+    function saveFavorites() {
+      try { localStorage.setItem(CDM_FAV_KEY, JSON.stringify(favorites)); } catch(e) {}
     }
 
     // --- Escape HTML to prevent XSS from shared marker data ---
@@ -750,6 +768,18 @@
           titleSpan.className = 'category-title';
           titleSpan.textContent = cat.title;
 
+          var star = document.createElement('span');
+          star.style.cssText = 'cursor:pointer;font-size:12px;flex-shrink:0;color:' + (favorites[cat.id] ? '#f1c40f' : '#555') + ';';
+          star.textContent = favorites[cat.id] ? '\u2605' : '\u2606';
+          star.title = 'Favorite';
+          star.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (favorites[cat.id]) { delete favorites[cat.id]; } else { favorites[cat.id] = true; }
+            saveFavorites();
+            renderFavoritesBar();
+            renderSidebar();
+          });
+
           var counts = Progress.getFoundCount(currentMapId, cat.id, currentMarkerData.markers);
           var countSpan = document.createElement('span');
           countSpan.className = 'category-count';
@@ -760,6 +790,7 @@
           row.appendChild(iconSpan);
           row.appendChild(titleSpan);
           row.appendChild(countSpan);
+          row.appendChild(star);
 
           // Right-click category to "show only this"
           row.addEventListener('contextmenu', function(e) {
@@ -817,6 +848,73 @@
         });
       }
     }
+
+    // --- Favorites Bar ---
+    function renderFavoritesBar() {
+      var favKeys = Object.keys(favorites);
+      var bar = document.getElementById('favorites-bar');
+      var list = document.getElementById('favorites-list');
+      if (favKeys.length === 0) {
+        bar.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+      bar.style.display = 'block';
+      list.innerHTML = '';
+      favKeys.forEach(function(catId) {
+        var info = categoryMap[catId];
+        if (!info) return;
+        var chip = document.createElement('span');
+        var isVisible = categoryVisibility[catId] !== false;
+        chip.style.cssText = 'display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;cursor:pointer;border:1px solid ' + info.group.color + ';' +
+          (isVisible ? 'background:' + info.group.color + ';color:#fff;' : 'background:transparent;color:#aaa;');
+        var catCode = ICON_MAP[info.category.icon];
+        var iconSpan = document.createElement('span');
+        iconSpan.style.fontFamily = "'cdm-icons'";
+        iconSpan.style.fontSize = '10px';
+        iconSpan.textContent = catCode ? String.fromCharCode(parseInt(catCode, 16)) : info.category.title.charAt(0);
+        chip.appendChild(iconSpan);
+        var label = document.createElement('span');
+        label.textContent = info.category.title;
+        chip.appendChild(label);
+        chip.addEventListener('click', function() {
+          categoryVisibility[catId] = !isVisible;
+          saveVisibility();
+          applyFilters();
+          renderFavoritesBar();
+          renderSidebar();
+        });
+        list.appendChild(chip);
+      });
+    }
+
+    document.getElementById('btn-fav-show').addEventListener('click', function() {
+      // Hide all, show only favorites
+      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = false; });
+      Object.keys(favorites).forEach(function(k) { categoryVisibility[k] = true; });
+      saveVisibility();
+      applyFilters();
+      renderFavoritesBar();
+      renderSidebar();
+    });
+
+    document.getElementById('btn-fav-hide').addEventListener('click', function() {
+      // Hide everything except favorites
+      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = !!favorites[k]; });
+      saveVisibility();
+      applyFilters();
+      renderFavoritesBar();
+      renderSidebar();
+    });
+
+    document.getElementById('btn-fav-reset').addEventListener('click', function() {
+      // Show all categories
+      Object.keys(categoryVisibility).forEach(function(k) { categoryVisibility[k] = true; });
+      saveVisibility();
+      applyFilters();
+      renderFavoritesBar();
+      renderSidebar();
+    });
 
     // --- Update progress display ---
     function updateProgressDisplay() {
@@ -962,6 +1060,7 @@
     });
 
     renderSidebar();
+    renderFavoritesBar();
     updateProgressDisplay();
 
     // --- Map Selector ---
