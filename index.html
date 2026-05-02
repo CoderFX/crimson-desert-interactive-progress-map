@@ -29,10 +29,6 @@
       padding: 0 12px; gap: 12px;
     }
     #topbar-title { font-size: 14px; font-weight: bold; color: #fff; white-space: nowrap; }
-    #map-selector {
-      padding: 4px 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px;
-      color: #e0e0e0; font-size: 13px; cursor: pointer;
-    }
     .topbar-spacer { flex: 1; }
     .topbar-btn {
       padding: 4px 10px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px;
@@ -123,7 +119,6 @@
 
   <div id="topbar">
     <span id="topbar-title">Crimson Desert Map</span>
-    <select id="map-selector"></select>
     <span class="topbar-spacer"></span>
     <button class="topbar-btn" id="btn-faction-layer" title="Toggle faction overlay">Factions</button>
     <button class="topbar-btn" id="btn-add-marker" title="Add custom marker">+ Add</button>
@@ -424,14 +419,7 @@
     });
 
     var regionColors = { 'Hernand': '#c0392b', 'Demeniss': '#2980b9', 'Pailune': '#27ae60', 'Delesyia': '#f39c12', 'Crimson Desert': '#e74c3c', 'Abyss': '#8e44ad' };
-    var regionFactions = {
-      'Hernand': ['Greymanes', 'House Alfonso', 'House Celeste', 'House Felix', 'House Grace', 'House Roberts', 'House Serkis', 'Goldleaf Merchant Guild', 'Hernandian Parish of Solumen', 'Wolf Trackers', 'Scholastone Institute', 'Vellua Fishermen\'s Guild', 'St. Halssius\'s House of Healing', 'Beggar\'s Alliance', 'Bleed Bandits', 'Southern Bandits', 'Dancing Catfish Pirates', 'Hornsplitter\'s Guards', 'Pororin Forest Guardians', 'Reed Devil', 'Cassius Morten', 'Fundamentalist Goblins', 'Kharonso Troll Alliance'],
-      'Demeniss': ['House Azerian', 'House Byron', 'House Elemore', 'House Marshell', 'House Thorel', 'House Wells', 'Bastier\'s Inquisitors', 'Silvermoon Trade Collective', 'Tariv Sorcerers'],
-      'Delesyia': ['Marni', 'Marni\'s Tinkertons', 'Cogknights', 'Delesyia National Institute', 'Delesyian Aerial Force', 'Ironwheel of Dewhaven', 'Society of Progress', 'Gearmelt Confectionery', 'Redfox Merchants', 'The Wyvernflames', 'Ironflame Orcs'],
-      'Pailune': ['Knytlingar Clan', 'Stjar Clan', 'Skoghorn Tribe', 'Beighen Tribe', 'Longleaf Tribe', 'Blue Fangs', 'Black Bears', 'Crow Brothers', 'Lonely Jackals', 'Mistwood Hunters', 'Pailune Militia'],
-      'Crimson Desert': ['The Helms', 'Muiquun Outlaws', 'Goldenscale Bandits', 'Sandfang Marauders', 'Savage Fangs', 'The Faceless', 'Arcosa Tribe', 'Dusksong', 'Urdavah', 'Varnia', 'Whitesand Retreat', 'Redwind Merchant Guild', 'Tommaso', 'Lords of Unclaimed Lands', 'Sage of the Desert', 'Bursada Ruins Research Team', 'Giant Yard\'s Research Group'],
-      'Abyss': ['Antumbra Order']
-    };
+    // Region colors for polygon overlay
     var regionPolygons = L.layerGroup();
     if (window.CDM_REGIONS) {
       window.CDM_REGIONS.forEach(function(region) {
@@ -442,13 +430,7 @@
           color: color, weight: 2, fillColor: color, fillOpacity: 0.08,
           interactive: true
         });
-        var factions = regionFactions[region.title] || [];
-        var tipHtml = '<b>' + escapeHtml(region.title) + '</b>';
-        if (factions.length > 0) {
-          tipHtml += '<div style="font-size:11px;color:#aaa;margin-top:4px;max-height:180px;overflow-y:auto;">' +
-            factions.map(function(f) { return escapeHtml(f); }).join('<br>') + '</div>';
-        }
-        poly.bindTooltip(tipHtml, {
+        poly.bindTooltip('<b>' + escapeHtml(region.title) + '</b>', {
           sticky: true, direction: 'top', className: 'cdm-region-tooltip'
         });
         poly.on('mouseover', function() { poly.setStyle({ fillOpacity: 0.2, weight: 3 }); });
@@ -983,30 +965,7 @@
     updateProgressDisplay();
 
     // --- Map Selector ---
-    var mapSelector = document.getElementById('map-selector');
-    window.CDM_MAPS.forEach(function(m) {
-      var opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = m.title;
-      if (m.id === currentMapId) opt.selected = true;
-      mapSelector.appendChild(opt);
-    });
-
-    mapSelector.addEventListener('change', function() {
-      var newMapId = mapSelector.value;
-      var newConfig = window.CDM_MAPS.find(function(m) { return m.id === newMapId; });
-      if (!newConfig) return;
-
-      if (!window.CDM_MARKERS[newMapId]) {
-        var script = document.createElement('script');
-        script.src = newConfig.markersFile;
-        script.onload = function() { switchToMap(newMapId, newConfig); };
-        script.onerror = function() { console.warn('Failed to load markers for', newMapId); };
-        document.head.appendChild(script);
-      } else {
-        switchToMap(newMapId, newConfig);
-      }
-    });
+    // Map selector removed - single map (Pywel)
 
     function switchToMap(newMapId, newConfig) {
       currentMapId = newMapId;
