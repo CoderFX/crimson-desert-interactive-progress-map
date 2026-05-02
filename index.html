@@ -1188,6 +1188,27 @@
     renderFavoritesBar();
     updateProgressDisplay();
 
+    // --- Audio beep using Web Audio API (no external files) ---
+    var audioCtx = null;
+    function playBeep(count) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var i = 0;
+      function beepOnce() {
+        if (i >= count) return;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = i === 0 ? 880 : 1200;
+        gain.gain.value = 0.3;
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.15);
+        i++;
+        setTimeout(beepOnce, 250);
+      }
+      beepOnce();
+    }
+
     // --- Bank Investment Timers ---
     var CDM_TIMERS_KEY = 'cdm-bank-timers';
     var bankTimers = [];
@@ -1246,6 +1267,7 @@
         if (remaining <= 0) {
           el.textContent = 'READY!';
           el.style.color = '#27ae60';
+          if (!timer._beeped0) { timer._beeped0 = true; playBeep(3); }
         } else {
           // Real time remaining
           var hrs = Math.floor(remaining / 3600000);
@@ -1255,6 +1277,11 @@
           el.textContent = realStr;
           el.title = 'Real time: ' + realStr + '\nGame time: ' + Math.ceil(remaining / 300000) + 'h left';
           el.style.color = remaining < 600000 ? '#f39c12' : '#5A8EB2';
+          // Beep alerts at 15m, 10m, 5m real time
+          var remMin = remaining / 60000;
+          if (remMin <= 15 && remMin > 14.9 && !timer._beeped15) { timer._beeped15 = true; playBeep(1); }
+          if (remMin <= 10 && remMin > 9.9 && !timer._beeped10) { timer._beeped10 = true; playBeep(2); }
+          if (remMin <= 5 && remMin > 4.9 && !timer._beeped5) { timer._beeped5 = true; playBeep(2); }
         }
       });
     }
