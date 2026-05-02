@@ -71,22 +71,20 @@ A free, offline interactive map for **Crimson Desert** with full progress tracki
 
 If you have existing progress on MapGenie, you can import it:
 
+**Automatic (recommended):**
+
 1. Go to [mapgenie.io/crimson-desert/maps/pywel](https://mapgenie.io/crimson-desert/maps/pywel) (logged in)
 2. Open DevTools (F12) > Console
-3. Run: `copy(JSON.stringify(store.getState().user.foundLocations))`
-4. Create a JSON file with this structure:
-```json
-{
-  "schemaVersion": 1,
-  "pywel": {
-    "found": ["loc-544020", "loc-544720"],
-    "notes": {},
-    "customMarkers": []
-  }
-}
-```
-5. Convert the MapGenie IDs: each key like `"544020"` becomes `"loc-544020"` in the found array
-6. Use **Import Progress** to load the file
+3. Paste the contents of [`tools/fetch-mapgenie-progress.js`](tools/fetch-mapgenie-progress.js) and press Enter
+4. A `mapgenie-progress-YYYY-MM-DD.json` file downloads automatically
+5. In the interactive map, click the gear icon > **Import Progress** and select the file
+
+**Manual:**
+
+1. On the MapGenie map page console, run: `copy(JSON.stringify(store.getState().user.foundLocations))`
+2. Convert the IDs: each key like `"544020"` becomes `"loc-544020"`
+3. Create a JSON file matching the format in [`examples/example-progress.json`](examples/example-progress.json)
+4. Import it via the gear icon > **Import Progress**
 
 ### Faction Overlay
 
@@ -107,6 +105,10 @@ crimson-desert-interactive-progress-map/
     maps.js               # Map configuration
     markers/
       pywel.js            # All 7,080 marker locations
+  tools/
+    fetch-mapgenie-progress.js  # Paste in MapGenie console to export progress
+  examples/
+    example-progress.json       # Example progress file format
 ```
 
 ## Data Storage

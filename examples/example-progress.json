@@ -1,0 +1,25 @@
+{
+  "_comment": "EXAMPLE ONLY - This is sample data showing the progress file format. Replace with your own found location IDs.",
+  "schemaVersion": 1,
+  "pywel": {
+    "found": [
+      "loc-543900",
+      "loc-543937",
+      "loc-544020"
+    ],
+    "notes": {
+      "loc-543937": "Spire of Insight - great view from the top"
+    },
+    "customMarkers": [
+      {
+        "id": "custom-1700000000000",
+        "categoryId": "custom",
+        "isCustom": true,
+        "title": "My farming spot",
+        "lat": 0.65,
+        "lng": -0.80,
+        "note": "Good iron ore respawns here"
+      }
+    ]
+  }
+}
