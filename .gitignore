@@ -7,3 +7,4 @@ save_progress.json
 memory_diff_output/
 memory_scan_results.json
 save_schema.json
+tools/__pycache__/

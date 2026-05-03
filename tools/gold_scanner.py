@@ -36,8 +36,29 @@ STATIC_Z = 0x145efe9c8
 
 GOLD_BAR_KEY = 53
 SCAN_RADIUS = 500  # game units
-ITEM_OFFSET_RANGE = (860, 960)  # tighter byte range from position where item keys live
 SCAN_INTERVAL = 2  # seconds between scans
+GOLD_SEARCH_WINDOW = 8192  # bytes before/after a gold key to search for NPC coordinates
+READ_CHUNK_SIZE = 8 * 1024 * 1024
+READ_OVERLAP = GOLD_SEARCH_WINDOW + 128
+VALID_ITEM_KEY_MAX = 1000
+
+MEM_COMMIT = 0x1000
+PAGE_NOACCESS = 0x01
+PAGE_READONLY = 0x02
+PAGE_READWRITE = 0x04
+PAGE_WRITECOPY = 0x08
+PAGE_EXECUTE_READ = 0x20
+PAGE_EXECUTE_READWRITE = 0x40
+PAGE_EXECUTE_WRITECOPY = 0x80
+PAGE_GUARD = 0x100
+READABLE_PROTECTS = {
+    PAGE_READONLY,
+    PAGE_READWRITE,
+    PAGE_WRITECOPY,
+    PAGE_EXECUTE_READ,
+    PAGE_EXECUTE_READWRITE,
+    PAGE_EXECUTE_WRITECOPY,
+}
 
 # Coordinate transform (game -> map lat/lng)
 # From CD Companion's calibration data
@@ -83,13 +104,112 @@ class GoldScanner:
         except:
             return None
 
+    @staticmethod
+    def is_readable_region(mbi):
+        if mbi.State != MEM_COMMIT:
+            return False
+        if mbi.Protect & PAGE_GUARD:
+            return False
+        return (mbi.Protect & 0xff) in READABLE_PROTECTS
+
+    @staticmethod
+    def is_candidate_position(x, y, z, px, py, pz):
+        if x is None or y is None or z is None:
+            return False
+        if not all(-100000.0 < v < 100000.0 for v in (x, y, z)):
+            return False
+        if abs(x - px) > SCAN_RADIUS or abs(z - pz) > SCAN_RADIUS:
+            return False
+        if abs(y - py) > 1500 and abs(y) > 5000:
+            return False
+        if abs(x - px) < 1 and abs(y - py) < 5 and abs(z - pz) < 1:
+            return False
+        return True
+
+    @staticmethod
+    def plausible_item_cluster(data, pos, width):
+        """Keep u16/u32 key detection broad without accepting every incidental 53."""
+        start = max(0, pos - 256)
+        end = min(len(data) - width, pos + 256)
+        fmt = '<I' if width == 4 else '<H'
+        count = 0
+        for off in range(start + ((pos - start) % width), end + 1, width):
+            try:
+                val = struct.unpack_from(fmt, data, off)[0]
+            except struct.error:
+                continue
+            if 1 <= val <= VALID_ITEM_KEY_MAX:
+                count += 1
+                if count >= (2 if width == 4 else 3):
+                    return True
+        return width == 4 and count >= 1
+
+    def positions_near_gold(self, data, gold_pos, player, base_addr, key_width):
+        px, py, pz = player
+        found = []
+        start = max(0, gold_pos - GOLD_SEARCH_WINDOW)
+        end = min(len(data), gold_pos + GOLD_SEARCH_WINDOW)
+
+        pos = start + ((4 - (start % 4)) % 4)
+        while pos + 12 <= end:
+            try:
+                fx, fy, fz = struct.unpack_from('<fff', data, pos)
+            except struct.error:
+                break
+            if self.is_candidate_position(fx, fy, fz, px, py, pz):
+                found.append((fx, fy, fz, pos, 'f32'))
+            pos += 4
+
+        pos = start + ((4 - (start % 4)) % 4)
+        while pos + 24 <= end:
+            try:
+                fx, fy, fz = struct.unpack_from('<ddd', data, pos)
+            except struct.error:
+                break
+            if self.is_candidate_position(fx, fy, fz, px, py, pz):
+                found.append((fx, fy, fz, pos, 'f64'))
+            pos += 4
+
+        matches = []
+        for fx, fy, fz, pos, coord_fmt in found:
+            dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
+            lat, lng = game_to_map(fx, fz)
+            matches.append({
+                'x': round(fx, 1),
+                'y': round(fy, 1),
+                'z': round(fz, 1),
+                'lat': round(lat, 8),
+                'lng': round(lng, 8),
+                'dist': round(dist, 0),
+                'addr': hex(base_addr + pos),
+                'gold_offset': gold_pos - pos,
+                'coord_fmt': coord_fmt,
+                'key_fmt': f'u{key_width * 8}',
+            })
+        return matches
+
+    def scan_buffer_for_gold_npcs(self, data, base_addr, player):
+        matches = []
+        for pattern, width in (
+            (struct.pack('<I', GOLD_BAR_KEY), 4),
+            (struct.pack('<H', GOLD_BAR_KEY), 2),
+        ):
+            pos = 0
+            while True:
+                pos = data.find(pattern, pos)
+                if pos == -1:
+                    break
+                if self.plausible_item_cluster(data, pos, width):
+                    matches.extend(self.positions_near_gold(data, pos, player, base_addr, width))
+                pos += width
+        return matches
+
     def scan_gold_npcs(self):
         """Scan memory for nearby NPCs carrying gold bars."""
         player = self.get_player_pos()
         if not player:
             return []
 
-        px, py, pz = player
         k32 = ctypes.windll.kernel32
 
         class MBI64(ctypes.Structure):
@@ -110,57 +230,25 @@ class GoldScanner:
                                       ctypes.byref(mbi), ctypes.sizeof(mbi)):
                 break
 
-            if (mbi.State == 0x1000 and mbi.Protect == 0x04 and
-                    4096 < mbi.RegionSize < 16 * 1024 * 1024):
-                sz = min(mbi.RegionSize, 16 * 1024 * 1024)
-                buf = ctypes.create_string_buffer(sz)
-                br = ctypes.c_size_t()
-                if k32.ReadProcessMemory(self.handle, ctypes.c_uint64(mbi.BaseAddress),
-                                          buf, sz, ctypes.byref(br)):
-                    data = buf.raw[:br.value]
-                    mb_scanned += br.value / 1048576
-
-                    # Scan for position floats near player
-                    needle = struct.pack('<f', round(px))[:2]
-                    pos = 0
-                    while True:
-                        pos = data.find(needle, pos)
-                        if pos == -1 or pos + ITEM_OFFSET_RANGE[1] > len(data):
-                            break
-
-                        fx = struct.unpack_from('<f', data, pos)[0]
-                        if abs(fx - px) < SCAN_RADIUS:
-                            fz_off = pos + 8
-                            if fz_off + 4 <= len(data):
-                                fz = struct.unpack_from('<f', data, fz_off)[0]
-                                if abs(fz - pz) < SCAN_RADIUS:
-                                    fy = struct.unpack_from('<f', data, pos + 4)[0]
-                                    if (abs(fy) < 5000 and
-                                            not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
-                                        # Check item range: count valid item keys and look for gold
-                                        has_gold = False
-                                        item_count = 0
-                                        for g in range(ITEM_OFFSET_RANGE[0],
-                                                       ITEM_OFFSET_RANGE[1], 4):
-                                            if pos + g + 4 <= len(data):
-                                                val = struct.unpack_from('<I', data, pos + g)[0]
-                                                if 1 <= val <= 500:
-                                                    item_count += 1
-                                                if val == GOLD_BAR_KEY:
-                                                    has_gold = True
-                                        # Only count if it looks like a real inventory (5+ items)
-                                        if has_gold and item_count >= 5:
-                                            dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
-                                            lat, lng = game_to_map(fx, fz)
-                                            gold_npcs.append({
-                                                'x': round(fx, 1),
-                                                'y': round(fy, 1),
-                                                'z': round(fz, 1),
-                                                'lat': round(lat, 8),
-                                                'lng': round(lng, 8),
-                                                'dist': round(dist, 0),
-                                            })
-                        pos += 2
+            if self.is_readable_region(mbi) and mbi.RegionSize >= 4096:
+                region_left = mbi.RegionSize
+                region_off = 0
+                while region_left > 0:
+                    sz = min(region_left, READ_CHUNK_SIZE + READ_OVERLAP)
+                    chunk_addr = mbi.BaseAddress + region_off
+                    buf = ctypes.create_string_buffer(sz)
+                    br = ctypes.c_size_t()
+                    if k32.ReadProcessMemory(self.handle, ctypes.c_uint64(chunk_addr),
+                                              buf, sz, ctypes.byref(br)):
+                        data = buf.raw[:br.value]
+                        mb_scanned += br.value / 1048576
+                        gold_npcs.extend(
+                            self.scan_buffer_for_gold_npcs(data, chunk_addr, player)
+                        )
+                    if region_left <= READ_CHUNK_SIZE:
+                        break
+                    region_off += READ_CHUNK_SIZE
+                    region_left -= READ_CHUNK_SIZE
 
             addr = mbi.BaseAddress + mbi.RegionSize
             if addr <= mbi.BaseAddress:
@@ -169,7 +257,7 @@ class GoldScanner:
         # Deduplicate
         seen = set()
         unique = []
-        for n in gold_npcs:
+        for n in sorted(gold_npcs, key=lambda item: item['dist']):
             k = (round(n['x'] / 10) * 10, round(n['z'] / 10) * 10)
             if k not in seen:
                 seen.add(k)
