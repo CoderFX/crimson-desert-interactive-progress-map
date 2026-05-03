@@ -1719,27 +1719,7 @@
             } else {
               playerMarker.setLatLng(latlng);
             }
-            // Gold bar NPC proximity check
-            goldBarNPCs.forEach(function(npc) {
-              var dist = map.distance(latlng, L.latLng(npc.lat, npc.lng));
-              if (dist < 200 && !alertedNPCs[npc.id]) {
-                alertedNPCs[npc.id] = true;
-                playBeep(2);
-                // Highlight the NPC marker
-                var lm = leafletMarkers[npc.id];
-                if (lm) {
-                  var el = lm.getElement && lm.getElement();
-                  if (el) el.style.filter = 'drop-shadow(0 0 8px gold) drop-shadow(0 0 16px gold)';
-                }
-              } else if (dist > 500) {
-                delete alertedNPCs[npc.id];
-                var lm2 = leafletMarkers[npc.id];
-                if (lm2) {
-                  var el2 = lm2.getElement && lm2.getElement();
-                  if (el2) el2.style.filter = '';
-                }
-              }
-            });
+            // Gold bar proximity handled by gold_scanner now
           }
         } catch(e) {}
       };

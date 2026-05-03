@@ -35,8 +35,8 @@ STATIC_Y = 0x145efe9c4
 STATIC_Z = 0x145efe9c8
 
 GOLD_BAR_KEY = 53
-SCAN_RADIUS = 800  # game units
-ITEM_OFFSET_RANGE = (800, 1000)  # byte range from position where item keys live
+SCAN_RADIUS = 500  # game units
+ITEM_OFFSET_RANGE = (860, 960)  # tighter byte range from position where item keys live
 SCAN_INTERVAL = 2  # seconds between scans
 
 # Coordinate transform (game -> map lat/lng)
@@ -137,12 +137,19 @@ class GoldScanner:
                                     fy = struct.unpack_from('<f', data, pos + 4)[0]
                                     if (abs(fy) < 5000 and
                                             not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
-                                        # Check for gold bar in item range
+                                        # Check item range: count valid item keys and look for gold
+                                        has_gold = False
+                                        item_count = 0
                                         for g in range(ITEM_OFFSET_RANGE[0],
                                                        ITEM_OFFSET_RANGE[1], 4):
                                             if pos + g + 4 <= len(data):
                                                 val = struct.unpack_from('<I', data, pos + g)[0]
+                                                if 1 <= val <= 500:
+                                                    item_count += 1
                                                 if val == GOLD_BAR_KEY:
+                                                    has_gold = True
+                                        # Only count if it looks like a real inventory (5+ items)
+                                        if has_gold and item_count >= 5:
                                                     dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
                                                     lat, lng = game_to_map(fx, fz)
                                                     gold_npcs.append({
@@ -153,7 +160,6 @@ class GoldScanner:
                                                         'lng': round(lng, 8),
                                                         'dist': round(dist, 0),
                                                     })
-                                                    break
                         pos += 2
 
             addr = mbi.BaseAddress + mbi.RegionSize
