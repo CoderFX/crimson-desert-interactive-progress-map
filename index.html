@@ -1291,7 +1291,7 @@
         if (remaining <= 0) {
           el.textContent = 'READY!';
           el.style.color = '#27ae60';
-          if (!timer._beeped0) { timer._beeped0 = true; playBeep(3); }
+          timer._beeped0 = true;
         } else {
           // Real time remaining
           var hrs = Math.floor(remaining / 3600000);
@@ -1746,6 +1746,10 @@
     // Auto-connect on load
     connectPositionWS();
 
+    // --- Gold NPC pane (high z-index so markers show above everything) ---
+    map.createPane('goldNpcPane');
+    map.getPane('goldNpcPane').style.zIndex = 700;
+
     // --- Gold Bar NPC Scanner (ws://localhost:7892) ---
     var goldNpcMarkers = {};  // keyed by rounded position
     var goldNpcLastSeen = {};
@@ -1768,7 +1772,7 @@
                 var m = L.circleMarker(L.latLng(npc.lat, npc.lng), {
                   radius: 14, fillColor: '#FFD700', color: '#fff',
                   weight: 3, fillOpacity: 0.85, opacity: 1,
-                  pane: 'tooltipPane'
+                  pane: 'goldNpcPane'
                 }).addTo(map);
                 m.bindTooltip('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away', {
                   permanent: true, direction: 'top', offset: [0, -15],
