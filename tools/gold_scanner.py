@@ -150,16 +150,16 @@ class GoldScanner:
                                                     has_gold = True
                                         # Only count if it looks like a real inventory (5+ items)
                                         if has_gold and item_count >= 5:
-                                                    dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
-                                                    lat, lng = game_to_map(fx, fz)
-                                                    gold_npcs.append({
-                                                        'x': round(fx, 1),
-                                                        'y': round(fy, 1),
-                                                        'z': round(fz, 1),
-                                                        'lat': round(lat, 8),
-                                                        'lng': round(lng, 8),
-                                                        'dist': round(dist, 0),
-                                                    })
+                                            dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
+                                            lat, lng = game_to_map(fx, fz)
+                                            gold_npcs.append({
+                                                'x': round(fx, 1),
+                                                'y': round(fy, 1),
+                                                'z': round(fz, 1),
+                                                'lat': round(lat, 8),
+                                                'lng': round(lng, 8),
+                                                'dist': round(dist, 0),
+                                            })
                         pos += 2
 
             addr = mbi.BaseAddress + mbi.RegionSize
