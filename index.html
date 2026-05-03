@@ -1767,35 +1767,52 @@
     connectPositionWS();
 
     // --- Gold Bar NPC Scanner (ws://localhost:7892) ---
-    var goldNpcMarkers = [];
+    var goldNpcMarkers = {};  // keyed by rounded position
+    var goldNpcLastSeen = {};
+    var goldNpcBeeped = {};
+    var GOLD_STALE_MS = 15000;  // keep marker for 15s after last seen
+
     function connectGoldScannerWS() {
       var ws;
       try { ws = new WebSocket('ws://localhost:7892'); } catch(e) { return; }
       ws.onmessage = function(evt) {
         try {
           var msg = JSON.parse(evt.data);
-          if (msg.type === 'gold_npcs') {
-            // Remove old gold NPC markers
-            goldNpcMarkers.forEach(function(m) { map.removeLayer(m); });
-            goldNpcMarkers = [];
-            // Add new ones
-            if (msg.npcs && msg.npcs.length > 0) {
-              msg.npcs.forEach(function(npc) {
+          if (msg.type === 'gold_npcs' && msg.npcs) {
+            var now = Date.now();
+            // Update/add markers for detected NPCs
+            msg.npcs.forEach(function(npc) {
+              var key = Math.round(npc.x/10) + '_' + Math.round(npc.z/10);
+              goldNpcLastSeen[key] = now;
+              if (!goldNpcMarkers[key]) {
                 var m = L.circleMarker(L.latLng(npc.lat, npc.lng), {
-                  radius: 12, fillColor: '#FFD700', color: '#fff',
-                  weight: 3, fillOpacity: 0.8, opacity: 1
+                  radius: 14, fillColor: '#FFD700', color: '#fff',
+                  weight: 3, fillOpacity: 0.85, opacity: 1
                 }).addTo(map);
-                m.bindTooltip('GOLD BAR NPC (' + Math.round(npc.dist) + 'm)', {
+                m.bindTooltip('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away', {
                   permanent: true, direction: 'top', offset: [0, -15],
                   className: 'cdm-region-tooltip'
                 });
-                goldNpcMarkers.push(m);
-              });
-              // Beep on first detection
-              if (msg.npcs.length > 0 && goldNpcMarkers.length === msg.npcs.length) {
-                playBeep(2);
+                goldNpcMarkers[key] = m;
+                if (!goldNpcBeeped[key]) {
+                  goldNpcBeeped[key] = true;
+                  playBeep(3);
+                }
+              } else {
+                // Update position and distance
+                goldNpcMarkers[key].setLatLng(L.latLng(npc.lat, npc.lng));
+                goldNpcMarkers[key].setTooltipContent('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away');
               }
-            }
+            });
+            // Remove stale markers (not seen for 15s)
+            Object.keys(goldNpcMarkers).forEach(function(key) {
+              if (now - (goldNpcLastSeen[key] || 0) > GOLD_STALE_MS) {
+                map.removeLayer(goldNpcMarkers[key]);
+                delete goldNpcMarkers[key];
+                delete goldNpcLastSeen[key];
+                delete goldNpcBeeped[key];
+              }
+            });
           }
         } catch(e) {}
       };
