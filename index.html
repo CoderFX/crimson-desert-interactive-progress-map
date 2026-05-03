@@ -1787,7 +1787,8 @@
               if (!goldNpcMarkers[key]) {
                 var m = L.circleMarker(L.latLng(npc.lat, npc.lng), {
                   radius: 14, fillColor: '#FFD700', color: '#fff',
-                  weight: 3, fillOpacity: 0.85, opacity: 1
+                  weight: 3, fillOpacity: 0.85, opacity: 1,
+                  pane: 'tooltipPane'
                 }).addTo(map);
                 m.bindTooltip('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away', {
                   permanent: true, direction: 'top', offset: [0, -15],
