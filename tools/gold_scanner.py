@@ -176,6 +176,7 @@ class GoldScanner:
 clients = set()
 
 async def ws_handler(websocket):
+    global clients
     clients.add(websocket)
     log.info(f"Map client connected ({len(clients)} total)")
     try:
@@ -187,6 +188,7 @@ async def ws_handler(websocket):
 
 async def scan_loop(scanner):
     """Periodically scan and broadcast gold bar NPC positions."""
+    global clients
     prev_count = -1
     while True:
         try:
