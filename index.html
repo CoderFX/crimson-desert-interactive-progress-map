@@ -1770,7 +1770,7 @@
     var goldNpcMarkers = {};  // keyed by rounded position
     var goldNpcLastSeen = {};
     var goldNpcBeeped = {};
-    var GOLD_STALE_MS = 15000;  // keep marker for 15s after last seen
+    var GOLD_STALE_MS = 6000;  // remove marker 6s after not detected (stolen/moved away)
 
     function connectGoldScannerWS() {
       var ws;
@@ -1795,10 +1795,7 @@
                   className: 'cdm-region-tooltip'
                 });
                 goldNpcMarkers[key] = m;
-                if (!goldNpcBeeped[key]) {
-                  goldNpcBeeped[key] = true;
-                  playBeep(3);
-                }
+                // No beep - just visual
               } else {
                 // Update position and distance
                 goldNpcMarkers[key].setLatLng(L.latLng(npc.lat, npc.lng));

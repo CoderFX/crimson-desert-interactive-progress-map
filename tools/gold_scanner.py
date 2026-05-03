@@ -37,7 +37,7 @@ STATIC_Z = 0x145efe9c8
 GOLD_BAR_KEY = 53
 SCAN_RADIUS = 800  # game units
 ITEM_OFFSET_RANGE = (800, 1000)  # byte range from position where item keys live
-SCAN_INTERVAL = 3  # seconds between scans
+SCAN_INTERVAL = 2  # seconds between scans
 
 # Coordinate transform (game -> map lat/lng)
 # From CD Companion's calibration data
