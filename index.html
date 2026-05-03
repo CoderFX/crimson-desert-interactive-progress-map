@@ -19,6 +19,7 @@
     .cdm-pin-icon { position:absolute; top:3px; left:0; width:24px; height:20px; text-align:center; line-height:20px; font-family:'cdm-icons'!important; font-size:13px; color:#fff; }
     .cdm-pin-found { opacity:0.35; } /* default, overridden by dynamic style */
     .cdm-region-tooltip { background: #1a1a2e; color: #fff; border: 1px solid #555; font-size: 13px; padding: 6px 12px; border-radius: 4px; max-width: 220px; }
+    .cdm-gold-npc { filter: drop-shadow(0 0 6px gold) drop-shadow(0 0 12px gold) !important; }
     .cdm-region-tooltip::before { border-top-color: #555 !important; }
     #map { position: absolute; top: 44px; left: 280px; right: 0; bottom: 0; background: #16213e; }
 
@@ -121,6 +122,7 @@
     <span id="topbar-title">Crimson Desert Map</span>
     <div id="bank-timer-list" style="display:flex;gap:8px;flex:1;overflow-x:auto;padding:0 8px;"></div>
     <button id="btn-add-timer" class="topbar-btn" title="Add bank investment timer">🏦+</button>
+    <button class="topbar-btn" id="btn-position" title="Live tracking - requires CD Companion running">📍</button>
     <button class="topbar-btn" id="btn-faction-layer" title="Toggle faction overlay">Factions</button>
     <button class="topbar-btn" id="btn-add-marker" title="Add custom marker">+ Add</button>
     <button class="topbar-btn" id="btn-tools" title="Tools">&#9881;</button>
@@ -655,6 +657,14 @@
         });
         leafletMarkers[marker.id] = lm;
         markerDataById[marker.id] = marker;
+
+        // Gold glow for gold bar NPCs
+        if (marker.title && (marker.title.toLowerCase().indexOf('gold bar') !== -1 || marker.title.indexOf('Nobles Carrying') !== -1)) {
+          lm.on('add', function() {
+            var el = lm.getElement && lm.getElement();
+            if (el) el.classList.add('cdm-gold-npc');
+          });
+        }
 
         // Add to category layer group
         if (!categoryLayers[marker.categoryId]) {
@@ -1649,6 +1659,83 @@
         applyFilters();
       });
     }
+
+    // --- Live Position Tracking (connects to CD Companion WebSocket) ---
+    var playerMarker = null;
+    var playerConnected = false;
+    var goldBarNPCs = currentMarkerData.markers.filter(function(m) {
+      return m.title && (m.title.toLowerCase().indexOf('gold bar') !== -1 || m.title.indexOf('Nobles Carrying') !== -1);
+    });
+    var alertedNPCs = {};
+
+    function connectPositionWS() {
+      var ws;
+      try { ws = new WebSocket('ws://localhost:7891'); } catch(e) { return; }
+      ws.onopen = function() {
+        playerConnected = true;
+        document.getElementById('btn-position').style.background = '#27ae60';
+        document.getElementById('btn-position').title = 'Live tracking connected';
+      };
+      ws.onmessage = function(evt) {
+        try {
+          var msg = JSON.parse(evt.data);
+          if (msg.type === 'position' && msg.lat != null && msg.lng != null) {
+            var latlng = L.latLng(msg.lat, msg.lng);
+            if (!playerMarker) {
+              playerMarker = L.circleMarker(latlng, {
+                radius: 8, fillColor: '#00ff00', color: '#fff',
+                weight: 3, fillOpacity: 1, opacity: 1
+              }).addTo(map);
+              playerMarker.bindTooltip('You', { permanent: true, direction: 'top', offset: [0, -10], className: 'cdm-region-tooltip' });
+            } else {
+              playerMarker.setLatLng(latlng);
+            }
+            // Gold bar NPC proximity check
+            goldBarNPCs.forEach(function(npc) {
+              var dist = map.distance(latlng, L.latLng(npc.lat, npc.lng));
+              if (dist < 200 && !alertedNPCs[npc.id]) {
+                alertedNPCs[npc.id] = true;
+                playBeep(2);
+                // Highlight the NPC marker
+                var lm = leafletMarkers[npc.id];
+                if (lm) {
+                  var el = lm.getElement && lm.getElement();
+                  if (el) el.style.filter = 'drop-shadow(0 0 8px gold) drop-shadow(0 0 16px gold)';
+                }
+              } else if (dist > 500) {
+                delete alertedNPCs[npc.id];
+                var lm2 = leafletMarkers[npc.id];
+                if (lm2) {
+                  var el2 = lm2.getElement && lm2.getElement();
+                  if (el2) el2.style.filter = '';
+                }
+              }
+            });
+          }
+        } catch(e) {}
+      };
+      ws.onclose = function() {
+        playerConnected = false;
+        document.getElementById('btn-position').style.background = '';
+        document.getElementById('btn-position').title = 'Live tracking disconnected - click to retry';
+        if (playerMarker) { map.removeLayer(playerMarker); playerMarker = null; }
+        // Auto-reconnect after 5s
+        setTimeout(connectPositionWS, 5000);
+      };
+      ws.onerror = function() { ws.close(); };
+    }
+
+    document.getElementById('btn-position').addEventListener('click', function() {
+      if (playerConnected) {
+        // Center map on player
+        if (playerMarker) map.setView(playerMarker.getLatLng(), map.getZoom());
+      } else {
+        connectPositionWS();
+      }
+    });
+
+    // Auto-connect on load
+    connectPositionWS();
 
     // --- Sidebar toggle for mobile ---
     document.getElementById('sidebar-toggle').addEventListener('click', function() {
