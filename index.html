@@ -1766,6 +1766,44 @@
     // Auto-connect on load
     connectPositionWS();
 
+    // --- Gold Bar NPC Scanner (ws://localhost:7892) ---
+    var goldNpcMarkers = [];
+    function connectGoldScannerWS() {
+      var ws;
+      try { ws = new WebSocket('ws://localhost:7892'); } catch(e) { return; }
+      ws.onmessage = function(evt) {
+        try {
+          var msg = JSON.parse(evt.data);
+          if (msg.type === 'gold_npcs') {
+            // Remove old gold NPC markers
+            goldNpcMarkers.forEach(function(m) { map.removeLayer(m); });
+            goldNpcMarkers = [];
+            // Add new ones
+            if (msg.npcs && msg.npcs.length > 0) {
+              msg.npcs.forEach(function(npc) {
+                var m = L.circleMarker(L.latLng(npc.lat, npc.lng), {
+                  radius: 12, fillColor: '#FFD700', color: '#fff',
+                  weight: 3, fillOpacity: 0.8, opacity: 1
+                }).addTo(map);
+                m.bindTooltip('GOLD BAR NPC (' + Math.round(npc.dist) + 'm)', {
+                  permanent: true, direction: 'top', offset: [0, -15],
+                  className: 'cdm-region-tooltip'
+                });
+                goldNpcMarkers.push(m);
+              });
+              // Beep on first detection
+              if (msg.npcs.length > 0 && goldNpcMarkers.length === msg.npcs.length) {
+                playBeep(2);
+              }
+            }
+          }
+        } catch(e) {}
+      };
+      ws.onclose = function() { setTimeout(connectGoldScannerWS, 5000); };
+      ws.onerror = function() { ws.close(); };
+    }
+    connectGoldScannerWS();
+
     // --- Sidebar toggle for mobile ---
     document.getElementById('sidebar-toggle').addEventListener('click', function() {
       document.getElementById('sidebar').classList.toggle('open');
