@@ -122,6 +122,7 @@
     <span id="topbar-title">Crimson Desert Map</span>
     <div id="bank-timer-list" style="display:flex;gap:8px;flex:1;overflow-x:auto;padding:0 8px;"></div>
     <button id="btn-add-timer" class="topbar-btn" title="Add bank investment timer">🏦+</button>
+    <button class="topbar-btn" id="btn-gold-bars" title="Show Gold Bar NPCs" style="color:#f1c40f;">💰</button>
     <button class="topbar-btn" id="btn-position" title="Live tracking - requires CD Companion running">📍</button>
     <button class="topbar-btn" id="btn-faction-layer" title="Toggle faction overlay">Factions</button>
     <button class="topbar-btn" id="btn-add-marker" title="Add custom marker">+ Add</button>
@@ -1659,6 +1660,34 @@
         applyFilters();
       });
     }
+
+    // --- Gold Bar NPC quick-jump ---
+    var goldBarMarkerIds = [];
+    currentMarkerData.markers.forEach(function(m) {
+      if (m.title && (m.title.toLowerCase().indexOf('gold bar') !== -1 || m.title.indexOf('Nobles Carrying') !== -1)) {
+        goldBarMarkerIds.push(m.id);
+      }
+    });
+    var goldBarCycleIdx = 0;
+    document.getElementById('btn-gold-bars').addEventListener('click', function() {
+      if (goldBarMarkerIds.length === 0) return;
+      var id = goldBarMarkerIds[goldBarCycleIdx % goldBarMarkerIds.length];
+      goldBarCycleIdx++;
+      var marker = markerDataById[id];
+      var lm = leafletMarkers[id];
+      if (marker && lm) {
+        // Ensure category is visible
+        if (categoryVisibility[marker.categoryId] === false) {
+          categoryVisibility[marker.categoryId] = true;
+          saveVisibility();
+          applyFilters();
+          renderSidebar();
+        }
+        map.setView(L.latLng(marker.lat, marker.lng), 15);
+        lm.unbindPopup();
+        lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+      }
+    });
 
     // --- Live Position Tracking (connects to CD Companion WebSocket) ---
     var playerMarker = null;
