@@ -1,7 +1,7 @@
 """
 Gold Bar NPC Scanner for Crimson Desert
-Finds NPCs carrying gold bars by searching for item key 53 in dense
-item clusters, then looking for position floats 300-600 bytes before.
+Finds NPCs carrying gold bars. First scan is slow (~90s) to learn
+the memory layout. Subsequent scans are fast using learned offsets.
 
 Usage: Run as Administrator
   python tools/gold_scanner.py
@@ -26,14 +26,9 @@ PROCESS_NAME = "CrimsonDesert.exe"
 WS_PORT = 7892
 GOLD_BAR_KEY = 53
 SCAN_RADIUS = 300
-SCAN_INTERVAL = 5  # seconds - full memory scan takes ~60s
-MIN_ITEMS_CLUSTER = 12  # minimum item-like values near gold key
+SCAN_INTERVAL = 4
+MIN_ITEMS = 10
 
-# Position floats are 300-600 bytes BEFORE the gold key
-POS_SEARCH_MIN = 200
-POS_SEARCH_MAX = 650
-
-# Static position addresses (set by CD Companion hooks)
 STATIC_X = 0x145efe9c0
 STATIC_Y = 0x145efe9c4
 STATIC_Z = 0x145efe9c8
@@ -55,6 +50,9 @@ class GoldScanner:
     def __init__(self):
         self.pm = None
         self.handle = None
+        # Learned offsets from gold key to position (populated on first full scan)
+        self.known_offsets = set()
+        self.full_scan_done = False
 
     def attach(self):
         try:
@@ -69,12 +67,35 @@ class GoldScanner:
 
     def get_player_pos(self):
         try:
-            x = self.pm.read_float(STATIC_X)
-            y = self.pm.read_float(STATIC_Y)
-            z = self.pm.read_float(STATIC_Z)
-            return (x, y, z)
+            return (self.pm.read_float(STATIC_X),
+                    self.pm.read_float(STATIC_Y),
+                    self.pm.read_float(STATIC_Z))
         except:
             return None
+
+    def _is_item_cluster(self, data, pos):
+        """Check if there are MIN_ITEMS item-like u32 values near pos."""
+        items = 0
+        for j in range(max(0, pos - 100), min(len(data) - 4, pos + 100), 4):
+            v = struct.unpack_from('<I', data, j)[0]
+            if 1 <= v <= 500:
+                items += 1
+                if items >= MIN_ITEMS:
+                    return True
+        return False
+
+    def _find_pos_near(self, data, gold_pos, px, py, pz, search_range):
+        """Search for position floats within search_range of gold_pos."""
+        for p in range(max(0, gold_pos - search_range),
+                       min(len(data) - 12, gold_pos + search_range), 4):
+            fx = struct.unpack_from('<f', data, p)[0]
+            if abs(fx - px) < SCAN_RADIUS:
+                fy = struct.unpack_from('<f', data, p + 4)[0]
+                fz = struct.unpack_from('<f', data, p + 8)[0]
+                if (abs(fz - pz) < SCAN_RADIUS and abs(fy) < 10000
+                        and not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
+                    return fx, fy, fz, p - gold_pos
+        return None
 
     def scan_gold_npcs(self):
         player = self.get_player_pos()
@@ -98,6 +119,18 @@ class GoldScanner:
         results = []
         mb = 0
 
+        # First scan: wide search (±4096). Later: use learned offsets (±128 around each)
+        if self.full_scan_done and self.known_offsets:
+            search_range = 128
+            # Also expand learned offsets by ±64 for drift
+            check_offsets = set()
+            for o in self.known_offsets:
+                for delta in range(-64, 65, 4):
+                    check_offsets.add(o + delta)
+        else:
+            search_range = 4096
+            check_offsets = None
+
         while mb < 8000:
             if not k32.VirtualQueryEx(self.handle, ctypes.c_uint64(addr),
                                        ctypes.byref(mbi), ctypes.sizeof(mbi)):
@@ -113,7 +146,6 @@ class GoldScanner:
                     data = buf.raw[:br.value]
                     mb += br.value / 1048576
 
-                    # Search for gold bar key (u32 = 53)
                     pos = 0
                     while True:
                         pos = data.find(GOLD, pos)
@@ -123,42 +155,50 @@ class GoldScanner:
                             pos += 1
                             continue
 
-                        # Count item-like values (1-500) in ±100 bytes
-                        items = 0
-                        for j in range(max(0, pos - 100), min(len(data) - 4, pos + 100), 4):
-                            v = struct.unpack_from('<I', data, j)[0]
-                            if 1 <= v <= 500:
-                                items += 1
-
-                        if items >= MIN_ITEMS_CLUSTER:
-                            # Look for position floats 200-650 bytes BEFORE the gold key
-                            for p in range(max(0, pos - POS_SEARCH_MAX),
-                                           max(0, pos - POS_SEARCH_MIN), 4):
-                                if p + 12 > len(data):
-                                    break
-                                fx = struct.unpack_from('<f', data, p)[0]
-                                if abs(fx - px) < SCAN_RADIUS:
-                                    fy = struct.unpack_from('<f', data, p + 4)[0]
-                                    fz = struct.unpack_from('<f', data, p + 8)[0]
-                                    if (abs(fz - pz) < SCAN_RADIUS
-                                            and abs(fy) < 10000
-                                            and not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
-                                        dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
-                                        lat, lng = game_to_map(fx, fz)
-                                        results.append({
-                                            'x': round(fx, 1),
-                                            'y': round(fy, 1),
-                                            'z': round(fz, 1),
-                                            'lat': round(lat, 8),
-                                            'lng': round(lng, 8),
-                                            'dist': round(dist, 0),
-                                        })
-                                        break
+                        if self._is_item_cluster(data, pos):
+                            if check_offsets is not None:
+                                # Fast path: only check learned offsets
+                                for off in check_offsets:
+                                    p = pos + off
+                                    if 0 <= p and p + 12 <= len(data):
+                                        fx = struct.unpack_from('<f', data, p)[0]
+                                        if abs(fx - px) < SCAN_RADIUS:
+                                            fy = struct.unpack_from('<f', data, p + 4)[0]
+                                            fz = struct.unpack_from('<f', data, p + 8)[0]
+                                            if (abs(fz - pz) < SCAN_RADIUS and abs(fy) < 10000
+                                                    and not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
+                                                dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
+                                                lat, lng = game_to_map(fx, fz)
+                                                results.append({
+                                                    'x': round(fx, 1), 'y': round(fy, 1),
+                                                    'z': round(fz, 1), 'lat': round(lat, 8),
+                                                    'lng': round(lng, 8), 'dist': round(dist, 0),
+                                                })
+                                                break
+                            else:
+                                # Full scan: search wide range
+                                found = self._find_pos_near(data, pos, px, py, pz, search_range)
+                                if found:
+                                    fx, fy, fz, offset = found
+                                    self.known_offsets.add(offset)
+                                    dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
+                                    lat, lng = game_to_map(fx, fz)
+                                    results.append({
+                                        'x': round(fx, 1), 'y': round(fy, 1),
+                                        'z': round(fz, 1), 'lat': round(lat, 8),
+                                        'lng': round(lng, 8), 'dist': round(dist, 0),
+                                    })
                         pos += 4
 
             addr = mbi.BaseAddress + mbi.RegionSize
             if addr <= mbi.BaseAddress:
                 break
+
+        if not self.full_scan_done and self.known_offsets:
+            self.full_scan_done = True
+            log.info(f"Learned {len(self.known_offsets)} offsets from gold key to position")
+            log.info(f"Offset range: {min(self.known_offsets)} to {max(self.known_offsets)}")
+            log.info("Subsequent scans will be faster")
 
         # Deduplicate
         seen = set()
@@ -172,7 +212,6 @@ class GoldScanner:
         return unique
 
 
-# WebSocket
 clients = set()
 
 async def ws_handler(websocket):
@@ -191,11 +230,13 @@ async def scan_loop(scanner):
     prev_count = -1
     while True:
         try:
+            t0 = time.time()
             npcs = scanner.scan_gold_npcs()
+            elapsed = time.time() - t0
 
             if len(npcs) != prev_count:
                 prev_count = len(npcs)
-                log.info(f"Gold bar carriers: {len(npcs)}")
+                log.info(f"Gold bar carriers: {len(npcs)} ({elapsed:.0f}s)")
                 for n in npcs[:10]:
                     log.info(f"  ({n['x']:.0f}, {n['z']:.0f}) dist={n['dist']:.0f}")
 
@@ -229,12 +270,11 @@ async def main():
     if player:
         log.info(f"Player at ({player[0]:.0f}, {player[1]:.0f}, {player[2]:.0f})")
 
-    log.info("Initial scan...")
+    log.info("First scan (slow - learning memory layout)...")
     npcs = scanner.scan_gold_npcs()
     log.info(f"Found {len(npcs)} gold bar carrier(s)")
 
     log.info(f"WebSocket on ws://localhost:{WS_PORT}")
-    log.info(f"Scanning every {SCAN_INTERVAL}s, radius {SCAN_RADIUS}u")
 
     async with websockets.serve(ws_handler, "localhost", WS_PORT):
         await scan_loop(scanner)
