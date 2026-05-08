@@ -32,12 +32,14 @@ GOLD_BAR_KEY = 53
 SCAN_RADIUS = 300
 SCAN_INTERVAL = 3
 
-# We check offsets 0 to 2048 from each position match for gold bar key
-# The original working find was at offset +884
-ITEM_SCAN_RANGE = 2048
+# Item inventory lives at offsets +100 to +1000 from position floats
+# First NPC had gold at +884, second at +400
+# Scan the full range to catch both layouts
+ITEM_SCAN_START = 100   # bytes after position to start checking
+ITEM_SCAN_END = 1024    # bytes after position to stop checking
 
 # Minimum number of item-like values (1-500) near the gold key to confirm it's an inventory
-MIN_NEARBY_ITEMS = 8
+MIN_NEARBY_ITEMS = 10
 
 # Coordinate transform
 CAL = [
@@ -161,19 +163,20 @@ class GoldScanner:
                             pos += 2
                             continue
 
-                        # Now check offsets 0 to ITEM_SCAN_RANGE for gold bar key (53)
-                        end_check = min(len(data), pos + ITEM_SCAN_RANGE)
+                        # Check offsets +100 to +1024 from position for gold bar key
+                        scan_from = pos + ITEM_SCAN_START
+                        scan_to = min(len(data) - 4, pos + ITEM_SCAN_END)
                         has_gold = False
                         gold_offset = -1
 
-                        for g in range(pos, end_check - 4, 4):
+                        for g in range(scan_from, scan_to, 4):
                             val = struct.unpack_from('<I', data, g)[0]
                             if val == GOLD_BAR_KEY:
-                                # Verify this looks like an inventory by counting nearby item keys
+                                # Count item-like values in ±200 bytes around this gold key
                                 item_count = 0
-                                check_start = max(pos, g - 200)
-                                check_end = min(end_check, g + 200)
-                                for j in range(check_start, check_end - 4, 4):
+                                cs = max(0, g - 200)
+                                ce = min(len(data) - 4, g + 200)
+                                for j in range(cs, ce, 4):
                                     v = struct.unpack_from('<I', data, j)[0]
                                     if 1 <= v <= 500:
                                         item_count += 1
