@@ -27,10 +27,11 @@ echo [2/3] Starting position tracker (needs admin)...
 powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\start_companion.py' -Verb RunAs -WindowStyle Minimized"
 timeout /t 3 >NUL
 
-:: Start Gold Scanner - needs admin
-echo [3/3] Starting gold bar scanner (needs admin)...
-powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\gold_scanner.py' -Verb RunAs -WindowStyle Minimized"
-timeout /t 2 >NUL
+:: Gold Scanner disabled - too many false positives
+:: To re-enable, uncomment below and run as admin:
+:: echo [3/3] Starting gold bar scanner (needs admin)...
+:: powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\gold_scanner.py' -Verb RunAs -WindowStyle Minimized"
+:: timeout /t 2 >NUL
 
 :: Open map in browser
 echo.
