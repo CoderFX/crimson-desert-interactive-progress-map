@@ -33,10 +33,8 @@ echo [2/3] Starting position tracker (needs admin)...
 powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\start_companion.py' -Verb RunAs -WindowStyle Minimized"
 timeout /t 3 >NUL
 
-REM Start Gold Scanner - needs admin
-echo [3/3] Starting gold bar scanner (needs admin)...
-powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\gold_scanner.py' -Verb RunAs -WindowStyle Minimized"
-timeout /t 2 >NUL
+REM Gold scanner disabled - entity memory layout too dynamic for reliable detection
+REM Run manually if you want to experiment: python tools\gold_scanner.py (as admin)
 
 REM Open map in browser
 echo.
