@@ -25,7 +25,7 @@ log = logging.getLogger('gold_scanner')
 PROCESS_NAME = "CrimsonDesert.exe"
 WS_PORT = 7892
 GOLD_BAR_KEY = 53
-SCAN_RADIUS = 300
+SCAN_RADIUS = 150
 SCAN_INTERVAL = 4
 MIN_ITEMS = 10
 
