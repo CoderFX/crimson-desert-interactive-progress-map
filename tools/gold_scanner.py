@@ -1,10 +1,7 @@
 """
 Gold Bar NPC Scanner for Crimson Desert
-Scans game memory for nearby NPCs carrying gold bars.
-Broadcasts positions to the interactive map via WebSocket.
-
-Approach: Find position float triplets near player, then check
-a wide range of offsets for gold bar item key (53).
+Finds NPCs carrying gold bars by searching for item key 53 in dense
+item clusters, then looking for position floats 300-600 bytes before.
 
 Usage: Run as Administrator
   python tools/gold_scanner.py
@@ -27,21 +24,20 @@ log = logging.getLogger('gold_scanner')
 
 PROCESS_NAME = "CrimsonDesert.exe"
 WS_PORT = 7892
-
 GOLD_BAR_KEY = 53
 SCAN_RADIUS = 300
-SCAN_INTERVAL = 3
+SCAN_INTERVAL = 5  # seconds - full memory scan takes ~60s
+MIN_ITEMS_CLUSTER = 12  # minimum item-like values near gold key
 
-# Item inventory lives at offsets +100 to +1000 from position floats
-# First NPC had gold at +884, second at +400
-# Scan the full range to catch both layouts
-ITEM_SCAN_START = 100   # bytes after position to start checking
-ITEM_SCAN_END = 1024    # bytes after position to stop checking
+# Position floats are 300-600 bytes BEFORE the gold key
+POS_SEARCH_MIN = 200
+POS_SEARCH_MAX = 650
 
-# Minimum number of item-like values (1-500) near the gold key to confirm it's an inventory
-MIN_NEARBY_ITEMS = 10
+# Static position addresses (set by CD Companion hooks)
+STATIC_X = 0x145efe9c0
+STATIC_Y = 0x145efe9c4
+STATIC_Z = 0x145efe9c8
 
-# Coordinate transform
 CAL = [
     {"game": [-12127.14, 7.69], "map": [-0.9052, 0.7787]},
     {"game": [-3690.79, -6117.51], "map": [-0.5556, 0.5249]},
@@ -73,16 +69,14 @@ class GoldScanner:
 
     def get_player_pos(self):
         try:
-            # Find static position addresses dynamically
-            x = self.pm.read_float(0x145efe9c0)
-            y = self.pm.read_float(0x145efe9c4)
-            z = self.pm.read_float(0x145efe9c8)
+            x = self.pm.read_float(STATIC_X)
+            y = self.pm.read_float(STATIC_Y)
+            z = self.pm.read_float(STATIC_Z)
             return (x, y, z)
         except:
             return None
 
     def scan_gold_npcs(self):
-        """Find NPCs near player that have gold bar key in their memory."""
         player = self.get_player_pos()
         if not player:
             return []
@@ -98,23 +92,20 @@ class GoldScanner:
                 ('Protect', wt.DWORD), ('Type', wt.DWORD), ('__a2', wt.DWORD),
             ]
 
+        GOLD = struct.pack('<I', GOLD_BAR_KEY)
         mbi = MBI64()
         addr = 0
         results = []
         mb = 0
 
-        # Pack player X as search needle (match first 3 bytes of the float)
-        px_bytes = struct.pack('<f', px)
-
-        while mb < 6000:
+        while mb < 8000:
             if not k32.VirtualQueryEx(self.handle, ctypes.c_uint64(addr),
                                        ctypes.byref(mbi), ctypes.sizeof(mbi)):
                 break
 
-            # Only scan committed, writable memory (where game objects live)
-            if (mbi.State == 0x1000 and mbi.Protect == 0x04 and
-                    4096 < mbi.RegionSize < 16 * 1024 * 1024):
-                sz = min(mbi.RegionSize, 16 * 1024 * 1024)
+            if (mbi.State == 0x1000 and (mbi.Protect & 0xFF) in (0x04, 0x40)
+                    and mbi.RegionSize >= 4096):
+                sz = min(mbi.RegionSize, 32 * 1024 * 1024)
                 buf = ctypes.create_string_buffer(sz)
                 br = ctypes.c_size_t()
                 if k32.ReadProcessMemory(self.handle, ctypes.c_uint64(mbi.BaseAddress),
@@ -122,90 +113,54 @@ class GoldScanner:
                     data = buf.raw[:br.value]
                     mb += br.value / 1048576
 
-                    # Search for position floats near player
+                    # Search for gold bar key (u32 = 53)
                     pos = 0
                     while True:
-                        # Match first 2 bytes of player X float for speed
-                        pos = data.find(px_bytes[:2], pos)
-                        if pos == -1 or pos + ITEM_SCAN_RANGE > len(data):
+                        pos = data.find(GOLD, pos)
+                        if pos == -1:
                             break
-
-                        # Verify full float triple
-                        try:
-                            fx = struct.unpack_from('<f', data, pos)[0]
-                        except:
-                            pos += 2
+                        if pos % 4 != 0:
+                            pos += 1
                             continue
 
-                        if abs(fx - px) > SCAN_RADIUS:
-                            pos += 2
-                            continue
+                        # Count item-like values (1-500) in ±100 bytes
+                        items = 0
+                        for j in range(max(0, pos - 100), min(len(data) - 4, pos + 100), 4):
+                            v = struct.unpack_from('<I', data, j)[0]
+                            if 1 <= v <= 500:
+                                items += 1
 
-                        # Check Z (8 bytes after X, with Y in between)
-                        if pos + 12 > len(data):
-                            pos += 2
-                            continue
-
-                        fy = struct.unpack_from('<f', data, pos + 4)[0]
-                        fz = struct.unpack_from('<f', data, pos + 8)[0]
-
-                        if abs(fz - pz) > SCAN_RADIUS:
-                            pos += 2
-                            continue
-
-                        # Skip if it's the player's own position
-                        if abs(fx - px) < 1 and abs(fz - pz) < 1:
-                            pos += 2
-                            continue
-
-                        # Sanity check on Y (height)
-                        if abs(fy) > 10000:
-                            pos += 2
-                            continue
-
-                        # Check offsets +100 to +1024 from position for gold bar key
-                        scan_from = pos + ITEM_SCAN_START
-                        scan_to = min(len(data) - 4, pos + ITEM_SCAN_END)
-                        has_gold = False
-                        gold_offset = -1
-
-                        for g in range(scan_from, scan_to, 4):
-                            val = struct.unpack_from('<I', data, g)[0]
-                            if val == GOLD_BAR_KEY:
-                                # Count item-like values in ±200 bytes around this gold key
-                                item_count = 0
-                                cs = max(0, g - 200)
-                                ce = min(len(data) - 4, g + 200)
-                                for j in range(cs, ce, 4):
-                                    v = struct.unpack_from('<I', data, j)[0]
-                                    if 1 <= v <= 500:
-                                        item_count += 1
-
-                                if item_count >= MIN_NEARBY_ITEMS:
-                                    has_gold = True
-                                    gold_offset = g - pos
+                        if items >= MIN_ITEMS_CLUSTER:
+                            # Look for position floats 200-650 bytes BEFORE the gold key
+                            for p in range(max(0, pos - POS_SEARCH_MAX),
+                                           max(0, pos - POS_SEARCH_MIN), 4):
+                                if p + 12 > len(data):
                                     break
-
-                        if has_gold:
-                            dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
-                            lat, lng = game_to_map(fx, fz)
-                            results.append({
-                                'x': round(fx, 1),
-                                'y': round(fy, 1),
-                                'z': round(fz, 1),
-                                'lat': round(lat, 8),
-                                'lng': round(lng, 8),
-                                'dist': round(dist, 0),
-                                'gold_offset': gold_offset,
-                            })
-
-                        pos += 2
+                                fx = struct.unpack_from('<f', data, p)[0]
+                                if abs(fx - px) < SCAN_RADIUS:
+                                    fy = struct.unpack_from('<f', data, p + 4)[0]
+                                    fz = struct.unpack_from('<f', data, p + 8)[0]
+                                    if (abs(fz - pz) < SCAN_RADIUS
+                                            and abs(fy) < 10000
+                                            and not (abs(fx - px) < 1 and abs(fz - pz) < 1)):
+                                        dist = ((fx - px) ** 2 + (fz - pz) ** 2) ** 0.5
+                                        lat, lng = game_to_map(fx, fz)
+                                        results.append({
+                                            'x': round(fx, 1),
+                                            'y': round(fy, 1),
+                                            'z': round(fz, 1),
+                                            'lat': round(lat, 8),
+                                            'lng': round(lng, 8),
+                                            'dist': round(dist, 0),
+                                        })
+                                        break
+                        pos += 4
 
             addr = mbi.BaseAddress + mbi.RegionSize
             if addr <= mbi.BaseAddress:
                 break
 
-        # Deduplicate by rounding position
+        # Deduplicate
         seen = set()
         unique = []
         for n in sorted(results, key=lambda x: x['dist']):
@@ -217,7 +172,7 @@ class GoldScanner:
         return unique
 
 
-# WebSocket server
+# WebSocket
 clients = set()
 
 async def ws_handler(websocket):
@@ -237,19 +192,16 @@ async def scan_loop(scanner):
     while True:
         try:
             npcs = scanner.scan_gold_npcs()
-            player = scanner.get_player_pos()
 
             if len(npcs) != prev_count:
                 prev_count = len(npcs)
-                if npcs:
-                    log.info(f"Found {len(npcs)} gold bar carrier(s)!")
-                    for n in npcs[:10]:
-                        log.info(f"  ({n['x']:.0f}, {n['z']:.0f}) dist={n['dist']:.0f} offset=+{n['gold_offset']}")
+                log.info(f"Gold bar carriers: {len(npcs)}")
+                for n in npcs[:10]:
+                    log.info(f"  ({n['x']:.0f}, {n['z']:.0f}) dist={n['dist']:.0f}")
 
             msg = json.dumps({
                 "type": "gold_npcs",
                 "npcs": npcs,
-                "player": {"x": player[0], "y": player[1], "z": player[2]} if player else None,
                 "timestamp": time.time()
             })
 
@@ -270,19 +222,19 @@ async def scan_loop(scanner):
 async def main():
     scanner = GoldScanner()
     if not scanner.attach():
-        log.error("Could not attach to game. Run as Administrator.")
+        log.error("Could not attach. Run as Administrator.")
         sys.exit(1)
 
     player = scanner.get_player_pos()
     if player:
         log.info(f"Player at ({player[0]:.0f}, {player[1]:.0f}, {player[2]:.0f})")
 
-    log.info(f"Initial scan...")
+    log.info("Initial scan...")
     npcs = scanner.scan_gold_npcs()
     log.info(f"Found {len(npcs)} gold bar carrier(s)")
 
     log.info(f"WebSocket on ws://localhost:{WS_PORT}")
-    log.info(f"Scanning every {SCAN_INTERVAL}s, radius {SCAN_RADIUS}u, min {MIN_NEARBY_ITEMS} items to confirm")
+    log.info(f"Scanning every {SCAN_INTERVAL}s, radius {SCAN_RADIUS}u")
 
     async with websockets.serve(ws_handler, "localhost", WS_PORT):
         await scan_loop(scanner)
