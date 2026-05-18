@@ -322,6 +322,15 @@
       });
     });
 
+    // --- Custom tag categories (virtual categories based on marker title matching) ---
+    var TAG_CATEGORIES = [
+      { id: 'tag-goldleaf', title: 'Goldleaf Trading Post', icon: 'royal_trading_post', match: 'Goldleaf', color: '#DAA520' }
+    ];
+    var tagGroup = { id: 'tags', title: 'Custom Filters', color: '#DAA520', categories: TAG_CATEGORIES };
+    TAG_CATEGORIES.forEach(function(tc) {
+      categoryMap[tc.id] = { category: tc, group: tagGroup };
+    });
+
     // --- Category visibility state (persisted to localStorage) ---
     var CDM_VIS_KEY = 'cdm-category-visibility';
     var categoryVisibility;
@@ -335,6 +344,9 @@
         group.categories.forEach(function(cat) {
           categoryVisibility[cat.id] = true;
         });
+      });
+      TAG_CATEGORIES.forEach(function(tc) {
+        categoryVisibility[tc.id] = true;
       });
     }
     function saveVisibility() {
@@ -672,6 +684,12 @@
           categoryLayers[marker.categoryId] = L.layerGroup();
         }
         categoryLayers[marker.categoryId].addLayer(lm);
+
+        // Also add to custom tag layers (e.g. Goldleaf)
+        if (marker.title && marker.title.indexOf('Goldleaf') !== -1) {
+          if (!categoryLayers['tag-goldleaf']) categoryLayers['tag-goldleaf'] = L.layerGroup();
+          categoryLayers['tag-goldleaf'].addLayer(lm);
+        }
       });
 
       // Add visible category layers to map
@@ -714,7 +732,9 @@
       var container = document.getElementById('sidebar-categories');
       container.innerHTML = '';
 
-      currentMarkerData.groups.forEach(function(group) {
+      // Render custom tag group first, then regular groups
+      var allGroups = [tagGroup].concat(currentMarkerData.groups);
+      allGroups.forEach(function(group) {
         var header = document.createElement('div');
         header.className = 'group-header';
 
@@ -1123,15 +1143,19 @@
         // Favorite star for the category
         var catId = marker.categoryId;
         var favStar = document.createElement('span');
-        favStar.style.cssText = 'cursor:pointer;font-size:12px;flex-shrink:0;color:' + (favorites[catId] ? '#f1c40f' : '#555') + ';';
+        favStar.style.cssText = 'cursor:pointer;font-size:14px;flex-shrink:0;padding:2px 4px;color:' + (favorites[catId] ? '#f1c40f' : '#555') + ';';
         favStar.textContent = favorites[catId] ? '\u2605' : '\u2606';
-        favStar.title = (favorites[catId] ? 'Remove ' : 'Add ') + (catInfo ? catInfo.category.title : '') + ' from favorites';
+        favStar.title = (favorites[catId] ? 'Unfavorite ' : 'Favorite ') + (catInfo ? catInfo.category.title : '');
         favStar.addEventListener('click', function(e) {
           e.stopPropagation();
           if (favorites[catId]) { delete favorites[catId]; } else { favorites[catId] = true; }
           saveFavorites();
+          // Update star visually without rebuilding anything
+          favStar.textContent = favorites[catId] ? '\u2605' : '\u2606';
+          favStar.style.color = favorites[catId] ? '#f1c40f' : '#555';
+          favStar.title = (favorites[catId] ? 'Unfavorite ' : 'Favorite ') + (catInfo ? catInfo.category.title : '');
+          // Update favorites bar quietly (don't touch search results or sidebar)
           renderFavoritesBar();
-          renderSidebar();
         });
         row.appendChild(favStar);
 
