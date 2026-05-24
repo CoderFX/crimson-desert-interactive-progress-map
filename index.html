@@ -653,53 +653,85 @@
       });
     }
 
-    // --- Place pre-populated markers (pin icons with deferred DOM creation) ---
-    // Store marker data for deferred rendering
+    // --- Viewport-based marker rendering ---
+    // Only create Leaflet markers for what's visible. Massively reduces DOM load.
     var markerDataById = {};
+    var visibleMarkerIds = {};  // currently rendered on map
+    var VIEW_PAD = 0.3;  // extra padding around viewport (fraction of view size)
 
-    function placeMarkers() {
-      currentMarkerData.markers.forEach(function(marker) {
-        var latlng = L.latLng(marker.lat, marker.lng);
-        var isFound = Progress.isFound(currentMapId, marker.id);
-        var lm = L.marker(latlng, { icon: createPinIcon(marker.categoryId, isFound) });
-        lm._cdmCategoryId = marker.categoryId;
-        lm._cdmMarker = marker;
-        lm.on('click', function() {
-          lm.unbindPopup();
-          lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+    // Index markers by data only (no Leaflet objects yet)
+    currentMarkerData.markers.forEach(function(marker) {
+      markerDataById[marker.id] = marker;
+    });
+
+    function ensureMarker(marker) {
+      if (leafletMarkers[marker.id]) return leafletMarkers[marker.id];
+      var latlng = L.latLng(marker.lat, marker.lng);
+      var isFound = Progress.isFound(currentMapId, marker.id);
+      var lm = L.marker(latlng, { icon: createPinIcon(marker.categoryId, isFound) });
+      lm._cdmCategoryId = marker.categoryId;
+      lm._cdmMarker = marker;
+      lm.on('click', function() {
+        lm.unbindPopup();
+        lm.bindPopup(createPopupContent(marker), { maxWidth: 280 }).openPopup();
+      });
+      if (marker.title && (marker.title.toLowerCase().indexOf('gold bar') !== -1 || marker.title.indexOf('Nobles Carrying') !== -1)) {
+        lm.on('add', function() {
+          var el = lm.getElement && lm.getElement();
+          if (el) el.classList.add('cdm-gold-npc');
         });
-        leafletMarkers[marker.id] = lm;
-        markerDataById[marker.id] = marker;
-
-        // Gold glow for gold bar NPCs
-        if (marker.title && (marker.title.toLowerCase().indexOf('gold bar') !== -1 || marker.title.indexOf('Nobles Carrying') !== -1)) {
-          lm.on('add', function() {
-            var el = lm.getElement && lm.getElement();
-            if (el) el.classList.add('cdm-gold-npc');
-          });
-        }
-
-        // Add to category layer group
-        if (!categoryLayers[marker.categoryId]) {
-          categoryLayers[marker.categoryId] = L.layerGroup();
-        }
-        categoryLayers[marker.categoryId].addLayer(lm);
-
-        // Also add to custom tag layers (e.g. Goldleaf)
-        if (marker.title && marker.title.indexOf('Goldleaf') !== -1) {
-          if (!categoryLayers['tag-goldleaf']) categoryLayers['tag-goldleaf'] = L.layerGroup();
-          categoryLayers['tag-goldleaf'].addLayer(lm);
-        }
-      });
-
-      // Add visible category layers to map
-      Object.keys(categoryLayers).forEach(function(catId) {
-        if (categoryVisibility[catId] !== false) {
-          categoryLayers[catId].addTo(map);
-        }
-      });
+      }
+      leafletMarkers[marker.id] = lm;
+      return lm;
     }
-    placeMarkers();
+
+    function updateVisibleMarkers() {
+      var bounds = map.getBounds().pad(VIEW_PAD);
+      var newVisible = {};
+
+      currentMarkerData.markers.forEach(function(marker) {
+        var catVisible = categoryVisibility[marker.categoryId] !== false;
+        // Also check tag categories
+        var tagVisible = false;
+        TAG_CATEGORIES.forEach(function(tc) {
+          if (marker.title && marker.title.indexOf(tc.match) !== -1) {
+            if (categoryVisibility[tc.id] !== false) tagVisible = true;
+          }
+        });
+
+        if (!catVisible && !tagVisible) return;
+        if (!bounds.contains(L.latLng(marker.lat, marker.lng))) return;
+
+        newVisible[marker.id] = true;
+
+        if (!visibleMarkerIds[marker.id]) {
+          // Add to map
+          var lm = ensureMarker(marker);
+          lm.addTo(map);
+        }
+      });
+
+      // Remove markers no longer in view
+      Object.keys(visibleMarkerIds).forEach(function(id) {
+        if (!newVisible[id] && leafletMarkers[id]) {
+          map.removeLayer(leafletMarkers[id]);
+        }
+      });
+
+      visibleMarkerIds = newVisible;
+    }
+
+    // Update on map move/zoom
+    var updateTimer = null;
+    function scheduleUpdate() {
+      if (updateTimer) clearTimeout(updateTimer);
+      updateTimer = setTimeout(updateVisibleMarkers, 150);
+    }
+    map.on('moveend', scheduleUpdate);
+    map.on('zoomend', scheduleUpdate);
+
+    // Initial render
+    updateVisibleMarkers();
 
     // Apply hide-found on startup
     if (hideFound) applyFilters();
@@ -883,22 +915,16 @@
 
     // --- Apply visibility filters ---
     function applyFilters() {
-      // Toggle category layer groups
-      Object.keys(categoryLayers).forEach(function(catId) {
-        var visible = categoryVisibility[catId] !== false;
-        if (visible && !map.hasLayer(categoryLayers[catId])) {
-          categoryLayers[catId].addTo(map);
-        } else if (!visible && map.hasLayer(categoryLayers[catId])) {
-          map.removeLayer(categoryLayers[catId]);
-        }
-      });
+      // Re-render visible markers based on new visibility state
+      updateVisibleMarkers();
 
       // Hide found markers if toggle is on
       if (hideFound) {
-        currentMarkerData.markers.forEach(function(marker) {
-          var lm = leafletMarkers[marker.id];
+        Object.keys(visibleMarkerIds).forEach(function(id) {
+          var lm = leafletMarkers[id];
           if (!lm) return;
-          if (Progress.isFound(currentMapId, marker.id)) {
+          var marker = markerDataById[id];
+          if (marker && Progress.isFound(currentMapId, marker.id)) {
             var el = lm.getElement && lm.getElement();
             if (el) el.style.display = 'none';
           }
@@ -1716,10 +1742,21 @@
     // --- Live Position Tracking (connects to CD Companion WebSocket) ---
     var playerMarker = null;
     var playerConnected = false;
-    var goldBarNPCs = currentMarkerData.markers.filter(function(m) {
-      return m.title && (m.title.toLowerCase().indexOf('gold bar') !== -1 || m.title.indexOf('Nobles Carrying') !== -1);
-    });
-    var alertedNPCs = {};
+    var followMode = false;
+
+    function setFollowMode(on) {
+      followMode = on;
+      var btn = document.getElementById('btn-position');
+      if (on) {
+        btn.style.background = '#c0392b';
+        btn.title = 'Following player (click to stop)';
+        btn.textContent = '🎯';
+      } else if (playerConnected) {
+        btn.style.background = '#27ae60';
+        btn.title = 'Live tracking connected (click to follow)';
+        btn.textContent = '📍';
+      }
+    }
 
     function connectPositionWS() {
       var ws;
@@ -1727,7 +1764,7 @@
       ws.onopen = function() {
         playerConnected = true;
         document.getElementById('btn-position').style.background = '#27ae60';
-        document.getElementById('btn-position').title = 'Live tracking connected';
+        document.getElementById('btn-position').title = 'Live tracking connected (click to follow)';
       };
       ws.onmessage = function(evt) {
         try {
@@ -1737,22 +1774,28 @@
             if (!playerMarker) {
               playerMarker = L.circleMarker(latlng, {
                 radius: 8, fillColor: '#00ff00', color: '#fff',
-                weight: 3, fillOpacity: 1, opacity: 1
+                weight: 3, fillOpacity: 1, opacity: 1,
+                pane: 'goldNpcPane'
               }).addTo(map);
               playerMarker.bindTooltip('You', { permanent: true, direction: 'top', offset: [0, -10], className: 'cdm-region-tooltip' });
             } else {
               playerMarker.setLatLng(latlng);
             }
-            // Gold bar proximity handled by gold_scanner now
+            // Follow mode: keep player centered
+            if (followMode) {
+              map.setView(latlng, map.getZoom(), { animate: false });
+            }
           }
         } catch(e) {}
       };
       ws.onclose = function() {
         playerConnected = false;
-        document.getElementById('btn-position').style.background = '';
-        document.getElementById('btn-position').title = 'Live tracking disconnected - click to retry';
+        followMode = false;
+        var btn = document.getElementById('btn-position');
+        btn.style.background = '';
+        btn.title = 'Live tracking disconnected - click to retry';
+        btn.textContent = '📍';
         if (playerMarker) { map.removeLayer(playerMarker); playerMarker = null; }
-        // Auto-reconnect after 5s
         setTimeout(connectPositionWS, 5000);
       };
       ws.onerror = function() { ws.close(); };
@@ -1760,11 +1803,22 @@
 
     document.getElementById('btn-position').addEventListener('click', function() {
       if (playerConnected) {
-        // Center map on player
-        if (playerMarker) map.setView(playerMarker.getLatLng(), map.getZoom());
+        if (followMode) {
+          // Turn off follow mode
+          setFollowMode(false);
+        } else {
+          // Turn on follow mode and center
+          setFollowMode(true);
+          if (playerMarker) map.setView(playerMarker.getLatLng(), map.getZoom());
+        }
       } else {
         connectPositionWS();
       }
+    });
+
+    // Disable follow mode when user manually drags the map
+    map.on('dragstart', function() {
+      if (followMode) setFollowMode(false);
     });
 
     // Auto-connect on load
