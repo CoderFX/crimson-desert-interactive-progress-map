@@ -1839,72 +1839,7 @@
     // Auto-connect on load
     connectPositionWS();
 
-    // --- Gold NPC pane (high z-index so markers show above everything) ---
-    map.createPane('goldNpcPane');
-    map.getPane('goldNpcPane').style.zIndex = 700;
-
-    // --- Gold Bar NPC Scanner (ws://localhost:7892) ---
-    var goldNpcMarkers = {};  // keyed by rounded position
-    var goldNpcLastSeen = {};
-    var goldNpcBeeped = {};
-    var GOLD_STALE_MS = 15000;  // tolerate occasional missed scanner passes
-
-    function connectGoldScannerWS() {
-      var ws;
-      try { ws = new WebSocket('ws://localhost:7892'); } catch(e) {
-        console.warn('Gold scanner WebSocket could not be created:', e);
-        return;
-      }
-      ws.onmessage = function(evt) {
-        try {
-          var msg = JSON.parse(evt.data);
-          if (msg.type === 'gold_npcs' && msg.npcs) {
-            var now = Date.now();
-            // Update/add markers for detected NPCs
-            msg.npcs.forEach(function(npc) {
-              if (typeof npc.lat !== 'number' || typeof npc.lng !== 'number' ||
-                  !isFinite(npc.lat) || !isFinite(npc.lng)) {
-                console.warn('Skipping gold NPC with invalid coordinates:', npc);
-                return;
-              }
-              var key = Math.round(npc.x/10) + '_' + Math.round(npc.z/10);
-              goldNpcLastSeen[key] = now;
-              if (!goldNpcMarkers[key]) {
-                var m = L.circleMarker(L.latLng(npc.lat, npc.lng), {
-                  radius: 14, fillColor: '#FFD700', color: '#fff',
-                  weight: 3, fillOpacity: 0.85, opacity: 1,
-                  pane: 'goldNpcPane'
-                }).addTo(map);
-                m.bindTooltip('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away', {
-                  permanent: true, direction: 'top', offset: [0, -15],
-                  className: 'cdm-region-tooltip'
-                });
-                goldNpcMarkers[key] = m;
-                // No beep - just visual
-              } else {
-                // Update position and distance
-                goldNpcMarkers[key].setLatLng(L.latLng(npc.lat, npc.lng));
-                goldNpcMarkers[key].setTooltipContent('<b>GOLD BAR NPC</b><br>' + Math.round(npc.dist) + 'm away');
-              }
-            });
-            // Remove stale markers.
-            Object.keys(goldNpcMarkers).forEach(function(key) {
-              if (now - (goldNpcLastSeen[key] || 0) > GOLD_STALE_MS) {
-                map.removeLayer(goldNpcMarkers[key]);
-                delete goldNpcMarkers[key];
-                delete goldNpcLastSeen[key];
-                delete goldNpcBeeped[key];
-              }
-            });
-          }
-        } catch(e) {
-          console.warn('Gold scanner message failed:', e, evt.data);
-        }
-      };
-      ws.onclose = function() { setTimeout(connectGoldScannerWS, 5000); };
-      ws.onerror = function(e) { console.warn('Gold scanner WebSocket error:', e); ws.close(); };
-    }
-    connectGoldScannerWS();
+    // Gold scanner removed - entity memory layout too dynamic for reliable detection
 
     // --- Sidebar toggle for mobile ---
     document.getElementById('sidebar-toggle').addEventListener('click', function() {
