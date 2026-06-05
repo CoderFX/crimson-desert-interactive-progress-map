@@ -207,9 +207,16 @@
 
     save: function() {
       try {
-        localStorage.setItem(CDM_PROGRESS_KEY, JSON.stringify(this._data));
+        var json = JSON.stringify(this._data);
+        localStorage.setItem(CDM_PROGRESS_KEY, json);
+        // Verify the write succeeded
+        var verify = localStorage.getItem(CDM_PROGRESS_KEY);
+        if (verify !== json) {
+          console.error('Progress save verification FAILED - localStorage may be full');
+        }
       } catch (e) {
-        console.warn('Failed to save progress:', e);
+        console.error('Failed to save progress:', e);
+        alert('WARNING: Could not save progress! localStorage may be full or blocked.\n\nExport your progress now via the gear icon > Export Progress.');
       }
     },
 
@@ -300,6 +307,14 @@
   };
 
   Progress.load();
+
+  // Warn if opened from file:// (progress won't persist correctly across origins)
+  if (window.location.protocol === 'file:') {
+    var banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#e74c3c;color:#fff;padding:8px 16px;font-size:13px;text-align:center;';
+    banner.innerHTML = 'Warning: Open via <b>http://localhost:8080</b> (run start.bat) to keep your progress. File:// mode loses data between sessions. <a href="#" style="color:#fff;margin-left:10px;" onclick="this.parentElement.remove();return false;">[dismiss]</a>';
+    document.body.appendChild(banner);
+  }
 
   // To import MapGenie progress: use Tools > Import Progress with a JSON file
   </script>
