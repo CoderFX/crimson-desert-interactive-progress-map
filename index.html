@@ -1778,6 +1778,7 @@
       try { ws = new WebSocket('ws://localhost:7891'); } catch(e) { return; }
       ws.onopen = function() {
         playerConnected = true;
+        positionEverConnected = true;
         document.getElementById('btn-position').style.background = '#27ae60';
         document.getElementById('btn-position').title = 'Live tracking connected (click to follow)';
       };
@@ -1789,8 +1790,7 @@
             if (!playerMarker) {
               playerMarker = L.circleMarker(latlng, {
                 radius: 8, fillColor: '#00ff00', color: '#fff',
-                weight: 3, fillOpacity: 1, opacity: 1,
-                pane: 'goldNpcPane'
+                weight: 3, fillOpacity: 1, opacity: 1
               }).addTo(map);
               playerMarker.bindTooltip('You', { permanent: true, direction: 'top', offset: [0, -10], className: 'cdm-region-tooltip' });
             } else {
@@ -1811,10 +1811,13 @@
         btn.title = 'Live tracking disconnected - click to retry';
         btn.textContent = '📍';
         if (playerMarker) { map.removeLayer(playerMarker); playerMarker = null; }
-        setTimeout(connectPositionWS, 5000);
+        // Only auto-reconnect if we previously connected successfully
+        if (positionEverConnected) setTimeout(connectPositionWS, 10000);
       };
       ws.onerror = function() { ws.close(); };
     }
+
+    var positionEverConnected = false;
 
     document.getElementById('btn-position').addEventListener('click', function() {
       if (playerConnected) {
