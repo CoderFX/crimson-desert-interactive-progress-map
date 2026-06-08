@@ -14,19 +14,22 @@ echo ========================================
 echo.
 
 REM Auto-detect Python
-where python >NUL 2>&1
-if %ERRORLEVEL% EQU 0 (
-    set PYTHON=python
-) else (
-    where python3 >NUL 2>&1
-    if %ERRORLEVEL% EQU 0 (
-        set PYTHON=python3
-    ) else (
-        echo [ERROR] Python not found. Install it from https://www.python.org/downloads/
-        echo         Make sure to check "Add python.exe to PATH" during install.
-        pause
-        exit /b 1
-    )
+set PYTHON=
+where python >NUL 2>&1 && set PYTHON=python
+if not defined PYTHON (
+    if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set PYTHON=%LOCALAPPDATA%\Programs\Python\Python313\python.exe
+)
+if not defined PYTHON (
+    if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set PYTHON=%LOCALAPPDATA%\Programs\Python\Python312\python.exe
+)
+if not defined PYTHON (
+    for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do if exist "%%D\python.exe" set PYTHON=%%D\python.exe
+)
+if not defined PYTHON (
+    echo [ERROR] Python not found. Install it from https://www.python.org/downloads/
+    echo         Make sure to check "Add python.exe to PATH" during install.
+    pause
+    exit /b 1
 )
 
 REM Kill any old map servers on port 8080
