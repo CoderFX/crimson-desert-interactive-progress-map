@@ -13,24 +13,17 @@ echo  Crimson Desert Interactive Progress Map
 echo ========================================
 echo.
 
-REM Auto-detect Python
+REM Find Python - check PATH first, then common install locations
 set PYTHON=
 where python >NUL 2>&1 && set PYTHON=python
+if not defined PYTHON if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined PYTHON if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
 if not defined PYTHON (
-    if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set PYTHON=%LOCALAPPDATA%\Programs\Python\Python313\python.exe
-)
-if not defined PYTHON (
-    if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set PYTHON=%LOCALAPPDATA%\Programs\Python\Python312\python.exe
-)
-if not defined PYTHON (
-    for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do if exist "%%D\python.exe" set PYTHON=%%D\python.exe
-)
-if not defined PYTHON (
-    echo [ERROR] Python not found. Install it from https://www.python.org/downloads/
-    echo         Make sure to check "Add python.exe to PATH" during install.
+    echo [ERROR] Python not found. Install from https://www.python.org/downloads/
     pause
     exit /b 1
 )
+echo Using: %PYTHON%
 
 REM Kill any old map servers on port 8080
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8080.*LISTENING"') do taskkill /F /PID %%a >NUL 2>&1
