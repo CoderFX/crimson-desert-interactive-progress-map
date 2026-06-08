@@ -18,7 +18,15 @@ where python >NUL 2>&1
 if %ERRORLEVEL% EQU 0 (
     set PYTHON=python
 ) else (
-    set PYTHON=python3
+    where python3 >NUL 2>&1
+    if %ERRORLEVEL% EQU 0 (
+        set PYTHON=python3
+    ) else (
+        echo [ERROR] Python not found. Install it from https://www.python.org/downloads/
+        echo         Make sure to check "Add python.exe to PATH" during install.
+        pause
+        exit /b 1
+    )
 )
 
 REM Kill any old map servers on port 8080
