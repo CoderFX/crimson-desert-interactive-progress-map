@@ -30,12 +30,10 @@ A free, offline interactive map for **Crimson Desert** with full progress tracki
 
 1. [Download the ZIP](../../archive/refs/heads/master.zip) or clone the repo
 2. Install [Python 3.13+](https://www.python.org/downloads/) if you don't have it
-3. Double-click **`start.bat`** (Windows) or run `./start.sh` (MSYS2/Git Bash)
+3. Double-click **`start.bat`**
 4. The map opens at **http://localhost:8080** with live position tracking
 
-`start.bat` launches:
-- HTTP server on port 8080 (serves the map)
-- CD Companion position tracker (shows your live location on the map — requires the game to be running)
+`start.bat` launches an HTTP server on port 8080 and opens the map in your browser. Python is only needed for this — no other dependencies required.
 
 > **Important:** Always use `http://localhost:8080` to keep your progress. Opening `index.html` directly via `file://` uses a different localStorage origin and your found items won't carry over.
 
