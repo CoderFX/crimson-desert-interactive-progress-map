@@ -18,7 +18,7 @@ A free, offline interactive map for **Crimson Desert** with full progress tracki
 - **Import/Export** progress as JSON for backup or sharing
 - **Right-click category** to "show only this" for focused hunting
 - **Responsive** -- works on mobile with collapsible sidebar
-- **Live position tracking** -- shows your real-time location on the map (requires [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125))
+- **Live position tracking** -- shows your real-time location on the map (requires a position tracker like CD Companion)
 - **Bank investment timers** -- track in-game investment returns with countdown alerts
 - **Favorites system** -- star categories for quick access
 - **One-click launcher** -- `start.bat` starts everything (map server + position tracker)
@@ -123,10 +123,7 @@ crimson-desert-interactive-progress-map/
       pywel.js            # All 7,080 marker locations
     regions.js            # Region polygon boundaries
   tools/
-    start_companion.py    # CD Companion position tracker bridge
-    fetch-progress.js          # Helper to import progress from other trackers
-    save_reader.py        # Crimson Desert save file decryptor (experimental)
-    save_watcher.py       # Save file progress extractor (experimental)
+    fetch-progress.js     # Helper to import progress from other trackers
   examples/
     example-progress.json # Example progress file format
 ```
@@ -169,7 +166,7 @@ Your data stays on your machine. Nothing is sent anywhere.
 
 ## Roadmap
 
-- [x] Live position tracking via CD Companion WebSocket
+- [x] Live position tracking via WebSocket
 - [x] Save file decryption (ChaCha20 + LZ4 + PARC format cracked)
 - [x] Bank investment timers with in-game time conversion
 - [x] Metaforge category icons (144 PNGs)
@@ -180,14 +177,14 @@ Your data stays on your machine. Nothing is sent anywhere.
 ## Prerequisites (for live tracking)
 
 - [Python 3.13+](https://www.python.org/downloads/) with `pip install pymem websockets`
-- [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125) source or the position tracker bridge in `tools/`
+- A position tracker that broadcasts on `ws://localhost:7891` (optional, for live position on map)
 - Game must be running for position tracking to work
 
 ## Credits
 
 - Map rendering by [Leaflet](https://leafletjs.com/)
 - Category icons from [Metaforge](https://metaforge.app/crimson-desert/map/main)
-- Position tracking based on [CD Companion](https://github.com/leandrodiogenes/cd-companion)
+- Position tracking protocol compatible with CD Companion
 - Save file format research from [NattKh/CrimsonGameMods](https://github.com/NattKh/CRIMSON-DESERT-SAVE-EDITOR-AND-GAME-MODS) and [LukeFZ/pycrimson](https://github.com/LukeFZ/pycrimson)
 - Location data sourced from community contributions
 
