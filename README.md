@@ -174,11 +174,24 @@ Your data stays on your machine. Nothing is sent anywhere.
 - [ ] Region-based navigation shortcuts (Hernand, Demeniss, Pailune, Delesyia, Abyss)
 - [ ] Download map tiles locally for full offline support
 
-## Prerequisites (for live tracking)
+## Live Position Tracking (optional)
 
+Shows your real-time location on the map as a green dot while playing.
+
+**Requirements:**
 - [Python 3.13+](https://www.python.org/downloads/) with `pip install pymem websockets`
-- A position tracker that broadcasts on `ws://localhost:7891` (optional, for live position on map)
-- Game must be running for position tracking to work
+- [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125) — download the source, extract to your Desktop
+- Game must be running
+
+**Setup:**
+1. Install Python and the dependencies: `pip install pymem websockets`
+2. Download [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125) from Nexus Mods (Files tab → source)
+3. Extract it to your Desktop (folder should be named `CD_Companion source 0.6.0` or similar)
+4. Run `start.bat` with the game running — it auto-detects CD Companion and launches the position tracker
+5. Accept the admin prompt (needed to read game memory)
+6. Your green dot appears on the map
+
+**Without CD Companion:** The map works perfectly — you just won't see your live position. Everything else (markers, progress, search, favorites) works without it.
 
 ## Credits
 
