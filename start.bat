@@ -13,48 +13,33 @@ echo  Crimson Desert Interactive Progress Map
 echo ========================================
 echo.
 
-set PYTHON=C:\Users\gelum\AppData\Local\Programs\Python\Python313\python.exe
-
-REM Check if game is running
-tasklist /FI "IMAGENAME eq CrimsonDesert.exe" 2>NUL | find /I "CrimsonDesert.exe" >NUL
-if %ERRORLEVEL% NEQ 0 (
-    echo [!] CrimsonDesert.exe not running. Start the game first.
-    echo     Press any key to continue anyway...
-    pause >NUL
+REM Auto-detect Python
+where python >NUL 2>&1
+if %ERRORLEVEL% EQU 0 (
+    set PYTHON=python
+) else (
+    set PYTHON=python3
 )
 
 REM Kill any old map servers on port 8080
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8080.*LISTENING"') do taskkill /F /PID %%a >NUL 2>&1
 timeout /t 1 >NUL
 
-REM Start HTTP server for the map (must cd first, --directory flag is unreliable)
-echo [1/2] Starting map server on http://localhost:8080 ...
+REM Start HTTP server for the map
+echo Starting map server on http://localhost:8080 ...
 start "Map Server" /min /d "%~dp0" %PYTHON% -m http.server 8080
-timeout /t 1 >NUL
-
-REM Start CD Companion (position tracking) - needs admin
-echo [2/2] Starting position tracker (needs admin)...
-powershell -Command "Start-Process '%PYTHON%' -ArgumentList '%~dp0tools\start_companion.py' -Verb RunAs -WindowStyle Minimized"
-timeout /t 3 >NUL
-
-REM Gold scanner disabled - entity memory layout too dynamic for reliable detection
-REM Run manually if you want to experiment: python tools\gold_scanner.py (as admin)
+timeout /t 2 >NUL
 
 REM Open map in browser
-echo.
 echo Opening map in browser...
 start "" "http://localhost:8080"
 
 echo.
 echo ========================================
-echo  All services running!
-echo  Map:       http://localhost:8080
-echo  Position:  ws://localhost:7891
-echo  Gold scan: ws://localhost:7892
+echo  Map running at http://localhost:8080
 echo ========================================
 echo.
 echo Close this window to stop the map server.
-echo (Position tracker and gold scanner run separately as admin)
 echo.
 
 pause >NUL

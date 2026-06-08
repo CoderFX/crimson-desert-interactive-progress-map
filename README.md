@@ -2,7 +2,6 @@
 
 A free, offline interactive map for **Crimson Desert** with full progress tracking. No account required, no server, no paywall. Just open `index.html` in your browser.
 
-![Map Preview](https://cdn.mapgenie.io/images/games/crimson-desert/preview.jpg)
 
 ## Features
 
@@ -88,24 +87,13 @@ A free, offline interactive map for **Crimson Desert** with full progress tracki
 | Export marker data | Click the gear icon, then **Export Marker Data** |
 | Reset progress | Click the gear icon, then **Reset Progress** |
 
-### Importing from MapGenie
+### Importing Existing Progress
 
-If you have existing progress on MapGenie, you can import it:
+If you have progress from another tracker, you can import it:
 
-**Automatic (recommended):**
-
-1. Go to [mapgenie.io/crimson-desert/maps/pywel](https://mapgenie.io/crimson-desert/maps/pywel) (logged in)
-2. Open DevTools (F12) > Console
-3. Paste the contents of [`tools/fetch-mapgenie-progress.js`](tools/fetch-mapgenie-progress.js) and press Enter
-4. A `mapgenie-progress-YYYY-MM-DD.json` file downloads automatically
-5. In the interactive map, click the gear icon > **Import Progress** and select the file
-
-**Manual:**
-
-1. On the MapGenie map page console, run: `copy(JSON.stringify(store.getState().user.foundLocations))`
-2. Convert the IDs: each key like `"544020"` becomes `"loc-544020"`
-3. Create a JSON file matching the format in [`examples/example-progress.json`](examples/example-progress.json)
-4. Import it via the gear icon > **Import Progress**
+1. Create a JSON file matching the format in [`examples/example-progress.json`](examples/example-progress.json)
+2. Import it via the gear icon > **Import Progress**
+3. Choose **Merge** to combine with existing progress, or **Replace** to overwrite
 
 ### Faction Overlay
 
@@ -130,7 +118,7 @@ crimson-desert-interactive-progress-map/
     regions.js            # Region polygon boundaries
   tools/
     start_companion.py    # CD Companion position tracker bridge
-    fetch-mapgenie-progress.js  # Paste in MapGenie console to export progress
+    fetch-progress.js          # Helper to import progress from other trackers
     save_reader.py        # Crimson Desert save file decryptor (experimental)
     save_watcher.py       # Save file progress extractor (experimental)
   examples/
@@ -191,11 +179,11 @@ Your data stays on your machine. Nothing is sent anywhere.
 
 ## Credits
 
-- Map tiles and location data sourced from [MapGenie](https://mapgenie.io/crimson-desert)
-- Category icons from [Metaforge](https://metaforge.app/crimson-desert/map/main)
 - Map rendering by [Leaflet](https://leafletjs.com/)
+- Category icons from [Metaforge](https://metaforge.app/crimson-desert/map/main)
 - Position tracking based on [CD Companion](https://github.com/leandrodiogenes/cd-companion)
 - Save file format research from [NattKh/CrimsonGameMods](https://github.com/NattKh/CRIMSON-DESERT-SAVE-EDITOR-AND-GAME-MODS) and [LukeFZ/pycrimson](https://github.com/LukeFZ/pycrimson)
+- Location data sourced from community contributions
 
 ## License
 
