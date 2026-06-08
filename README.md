@@ -19,13 +19,34 @@ A free, offline interactive map for **Crimson Desert** with full progress tracki
 - **Import/Export** progress as JSON for backup or sharing
 - **Right-click category** to "show only this" for focused hunting
 - **Responsive** -- works on mobile with collapsible sidebar
+- **Live position tracking** -- shows your real-time location on the map (requires [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125))
+- **Bank investment timers** -- track in-game investment returns with countdown alerts
+- **Favorites system** -- star categories for quick access
+- **One-click launcher** -- `start.bat` starts everything (map server + position tracker)
 - **Fully offline** -- works from `file://`, no server needed
 
 ## Quick Start
 
+### Recommended: Use the launcher (preserves progress across sessions)
+
+1. [Download the ZIP](../../archive/refs/heads/master.zip) or clone the repo
+2. Install [Python 3.13+](https://www.python.org/downloads/) if you don't have it
+3. Double-click **`start.bat`** (Windows) or run `./start.sh` (MSYS2/Git Bash)
+4. The map opens at **http://localhost:8080** with live position tracking
+
+`start.bat` launches:
+- HTTP server on port 8080 (serves the map)
+- CD Companion position tracker (shows your live location on the map — requires the game to be running)
+
+> **Important:** Always use `http://localhost:8080` to keep your progress. Opening `index.html` directly via `file://` uses a different localStorage origin and your found items won't carry over.
+
+### Simple: Just open the file
+
 1. [Download the ZIP](../../archive/refs/heads/master.zip) or clone the repo
 2. Open `index.html` in your browser (Chrome, Brave, Firefox, Edge)
 3. That's it. No install, no build step, no server.
+
+> Note: Progress saved this way won't be visible if you later switch to `start.bat`. Use the Export/Import feature to transfer.
 
 ## Usage Guide
 
@@ -94,21 +115,26 @@ Click the **Factions** button in the top bar to toggle the faction territory ove
 
 ```
 crimson-desert-interactive-progress-map/
-  index.html              # The app (open this in your browser)
+  start.bat               # Windows launcher (double-click to start everything)
+  start.sh                # MSYS2/Git Bash launcher
+  index.html              # The map app
   lib/
     leaflet.js            # Leaflet map library (bundled)
     leaflet.css
-    fonts/
-      icomoon.woff        # Category icon font
-      icomoon.ttf
+    fonts/                # Category icon font (icomoon)
+    icons/                # 144 Metaforge PNG category icons
   data/
     maps.js               # Map configuration
     markers/
       pywel.js            # All 7,080 marker locations
+    regions.js            # Region polygon boundaries
   tools/
+    start_companion.py    # CD Companion position tracker bridge
     fetch-mapgenie-progress.js  # Paste in MapGenie console to export progress
+    save_reader.py        # Crimson Desert save file decryptor (experimental)
+    save_watcher.py       # Save file progress extractor (experimental)
   examples/
-    example-progress.json       # Example progress file format
+    example-progress.json # Example progress file format
 ```
 
 ## Data Storage
@@ -149,15 +175,27 @@ Your data stays on your machine. Nothing is sent anywhere.
 
 ## Roadmap
 
-- [ ] Auto-track game progress by reading game memory (save files are encrypted)
+- [x] Live position tracking via CD Companion WebSocket
+- [x] Save file decryption (ChaCha20 + LZ4 + PARC format cracked)
+- [x] Bank investment timers with in-game time conversion
+- [x] Metaforge category icons (144 PNGs)
+- [ ] Auto-track game progress from save files (PARC nested list parsing needed)
 - [ ] Region-based navigation shortcuts (Hernand, Demeniss, Pailune, Delesyia, Abyss)
 - [ ] Download map tiles locally for full offline support
+
+## Prerequisites (for live tracking)
+
+- [Python 3.13+](https://www.python.org/downloads/) with `pip install pymem websockets`
+- [CD Companion](https://www.nexusmods.com/crimsondesert/mods/2125) source or the position tracker bridge in `tools/`
+- Game must be running for position tracking to work
 
 ## Credits
 
 - Map tiles and location data sourced from [MapGenie](https://mapgenie.io/crimson-desert)
+- Category icons from [Metaforge](https://metaforge.app/crimson-desert/map/main)
 - Map rendering by [Leaflet](https://leafletjs.com/)
-- Category icons from the Crimson Desert icon font
+- Position tracking based on [CD Companion](https://github.com/leandrodiogenes/cd-companion)
+- Save file format research from [NattKh/CrimsonGameMods](https://github.com/NattKh/CRIMSON-DESERT-SAVE-EDITOR-AND-GAME-MODS) and [LukeFZ/pycrimson](https://github.com/LukeFZ/pycrimson)
 
 ## License
 
